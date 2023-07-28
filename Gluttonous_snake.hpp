@@ -219,6 +219,7 @@ public:
 					{
 						iGet = _getch();
 					} while (iGet != 'p' && iGet != 'P');
+					Wait(50);//给50ms反应时间
 				}
 				continue;
 			default:
