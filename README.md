@@ -1,2 +1,2 @@
 # Gluttonous_snake
-简易命令行贪吃蛇
+命令行贪吃蛇小游戏
