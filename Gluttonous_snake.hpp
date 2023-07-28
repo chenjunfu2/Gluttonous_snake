@@ -3,13 +3,14 @@
 #include <conio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <utility>
 
 #include <Windows.h>
 
 
 //标记
 #define FOOD_MARK -1//食物标记
-#define SNAKE_HEAD 1//蛇头标记
+#define SNAKE_TAIL 1//蛇尾标记
 #define NULL_BLOCK 0//空地标记
 
 struct My_Point
@@ -29,7 +30,7 @@ public:
 class Snake_Data
 {
 public:
-	enum Move_Direct :long
+	enum class Move_Direct :long
 	{
 		Up = 0,
 		Down,
@@ -40,17 +41,17 @@ public:
 	};
 
 private:
-	const long lMapWidth;//x
-	const long lMapHigh;//y
+	long lMapWidth;//x
+	long lMapHigh;//y
 	long *lMap;//地图
 
-	long lSnakeLength;//蛇长度
+	long lMoveInterval;//移动间隔
 	My_Point stSnakeHead;//头坐标
 	Move_Direct enMoveDirect;//移动方向
 public:
 
-	Snake_Data(long _lMapWidth, long _lMapHigh, const My_Point &_stSnakeStart, Move_Direct _enDirectStart) :
-		lMapWidth(_lMapWidth), lMapHigh(_lMapHigh)
+	Snake_Data(long _lMapWidth, long _lMapHigh, long _lMoveInterval, const My_Point &_stSnakeStart, Move_Direct _enDirectStart) :
+		lMapWidth(_lMapWidth), lMapHigh(_lMapHigh), lMoveInterval(_lMoveInterval)
 	{
 		lMap = new long[lMapWidth * lMapHigh];
 		Reset(_stSnakeStart, _enDirectStart);
@@ -62,24 +63,43 @@ public:
 		lMap = NULL;
 	}
 
+	Snake_Data(Snake_Data &&_Move):
+		lMapWidth		(_Move.lMapWidth),
+		lMapHigh		(_Move.lMapHigh),
+		lMap			(_Move.lMap),
+		lMoveInterval	(_Move.lMoveInterval),
+		stSnakeHead		(std::move(_Move.stSnakeHead)),
+		enMoveDirect	(_Move.enMoveDirect)
+	{
+		_Move.lMapWidth = 0;
+		_Move.lMapHigh = 0;
+		_Move.lMap = NULL;
+		_Move.lMoveInterval = 0;
+		_Move.enMoveDirect = Move_Direct::No_Move;
+	}
+
 	void Reset(const My_Point &_stSnakeStart, Move_Direct _enDirectStart)
 	{
 		stSnakeHead = _stSnakeStart;
 		enMoveDirect = _enDirectStart;
-		lSnakeLength = 1;//蛇长度设为1
 
 		memset(lMap, 0, lMapWidth * lMapHigh * sizeof(long));
-		GetMap(stSnakeHead) = SNAKE_HEAD;//初始化地图中蛇头的位置
+		GetMap(stSnakeHead) = SNAKE_TAIL;//初始化地图中蛇头的位置
 	}
 
-	long &GetSnakeLength(void)
+	long& GetMoveInterval(void) 
 	{
-		return lSnakeLength;
+		return lMoveInterval;
 	}
 
-	const long &GetSnakeLength(void) const
+	const long &GetMoveInterval(void) const
 	{
-		return lSnakeLength;
+		return lMoveInterval;
+	}
+
+	long GetSnakeLength(void) const
+	{
+		return GetMap(stSnakeHead);//蛇头数指即为蛇长度
 	}
 
 	My_Point &GetSnakeHead(void)
@@ -139,7 +159,7 @@ private:
 		return false;
 	}
 
-	static constexpr My_Point stSnakeMove[(long)Snake_Data::Arr_Size] =//移动方向
+	static constexpr My_Point stSnakeMove[(long)Snake_Data::Move_Direct::Arr_Size] =//移动方向
 	{
 		{ 0,-1},
 		{ 0, 1},
@@ -161,17 +181,6 @@ public:
 		return false;
 	}
 
-	static bool Lose(const Snake_Data &csSnakeData, const My_Point &stNewSnakeHead)
-	{
-		//越界或碰到蛇身
-		if (Cross(csSnakeData, stNewSnakeHead) || csSnakeData.GetMap(stNewSnakeHead) > NULL_BLOCK)
-		{
-			return true;
-		}
-
-		return false;
-	}
-
 	static Snake_Data::Move_Direct Input(void)
 	{
 		while (_kbhit() != 0)//存在一个输入
@@ -181,25 +190,25 @@ public:
 			case 'w':
 			case 'W':
 				{
-					return Snake_Data::Up;
+					return Snake_Data::Move_Direct::Up;
 				}
 				break;
 			case 'a':
 			case 'A':
 				{
-					return Snake_Data::Left;
+					return Snake_Data::Move_Direct::Left;
 				}
 				break;
 			case 's':
 			case 'S':
 				{
-					return Snake_Data::Down;
+					return Snake_Data::Move_Direct::Down;
 				}
 				break;
 			case 'd':
 			case 'D':
 				{
-					return Snake_Data::Right;
+					return Snake_Data::Move_Direct::Right;
 				}
 				break;
 			case 'p'://暂停
@@ -217,7 +226,7 @@ public:
 			}
 		}
 
-		return Snake_Data::No_Move;
+		return Snake_Data::Move_Direct::No_Move;
 	}
 
 	static bool SwitchInput(const char *cWaitInInputTrue, long lTrueConut, const char *cWaitInInputFalse, long lFalseConut)
@@ -248,22 +257,33 @@ public:
 		(void)_getch();
 	}
 
+	static void SetOutputFullMode(const Snake_Data &csSnakeData)
+	{
+		//设置缓冲区为全缓冲，大小为地图大小
+		setvbuf(stdout, NULL, _IOFBF, (csSnakeData.GetMapHigh() + 2) * (csSnakeData.GetMapWidth() + 2) + 1);
+	}
+
+	static void SetOutputLineMode(void)
+	{
+		setvbuf(stdout, NULL, _IOLBF, BUFSIZ);//恢复默认
+	}
+
 	static void ChangeDirect(Snake_Data &csSnakeData, Snake_Data::Move_Direct enMoveDirect)
 	{
 		//判断有没有进行移动
-		if (enMoveDirect != Snake_Data::No_Move)
+		if (enMoveDirect != Snake_Data::Move_Direct::No_Move)
 		{
 			//判断改变的方向是否是蛇身
 			My_Point stCurrent = csSnakeData.GetSnakeHead();
 			stCurrent += stSnakeMove[(long)enMoveDirect];
-			if (csSnakeData.GetMap(stCurrent) != SNAKE_HEAD + 1)//不是蛇身
+			if (csSnakeData.GetMap(stCurrent) == 0 || csSnakeData.GetMap(stCurrent) + 1 != csSnakeData.GetSnakeLength())//不是蛇身
 			{
 				csSnakeData.GetMoveDirect() = enMoveDirect;//改变方向
 			}
 		}
 	}
 
-	static void ProduceFood(Snake_Data &csSnakeData)
+	static void ProduceFood(Snake_Data &csSnakeData)//后续修改生成器
 	{
 		if (csSnakeData.GetSnakeLength() >= csSnakeData.GetMapHigh() * csSnakeData.GetMapWidth())
 		{
@@ -282,54 +302,51 @@ public:
 
 	static bool Move(Snake_Data &csSnakeData)
 	{
-		//先将蛇头向前移动一格
+		//先将蛇头向当前方向移动一格
 		My_Point stNewSnakeHead = csSnakeData.GetSnakeHead();
 		stNewSnakeHead += stSnakeMove[(long)csSnakeData.GetMoveDirect()];
 
 		//判断是否输了
-		if (Lose(csSnakeData, stNewSnakeHead))
+		if (Cross(csSnakeData, stNewSnakeHead) || csSnakeData.GetMap(stNewSnakeHead) > NULL_BLOCK)//撞墙或吃到自身
 		{
 			return false;
 		}
 
-		//设置蛇头位置
-		csSnakeData.GetSnakeHead() = stNewSnakeHead;
-
 		//判断是否吃到食物
-		bool bEatFood = false;
 		if (csSnakeData.GetMap(stNewSnakeHead) == FOOD_MARK)
 		{
-			++csSnakeData.GetSnakeLength();//增加蛇的长度
-			ProduceFood(csSnakeData);//生成新的食物
-			bEatFood = true;
+			//更新新蛇头为原先蛇头的值+1，并不移动蛇尾
+			csSnakeData.GetMap(stNewSnakeHead) = csSnakeData.GetSnakeLength() + 1;
+			//生成新的食物
+			ProduceFood(csSnakeData);
 		}
-
-		//更新新蛇头
-		csSnakeData.GetMap(stNewSnakeHead) = SNAKE_HEAD;
-
-		//更新蛇身
-		My_Point stCurrent = stNewSnakeHead;//后续此值为蛇尾坐标
-		for (long i = 0; i < csSnakeData.GetSnakeLength(); ++i)
+		else
 		{
-			//查看四个方向上与自身值相同的值
-			for (long j = 0; j < (long)Snake_Data::Arr_Size; ++j)
+			//更新新蛇头为原先蛇头的值
+			csSnakeData.GetMap(stNewSnakeHead) = csSnakeData.GetSnakeLength();
+			
+			//更新蛇身与蛇尾
+			My_Point stCurrent = stNewSnakeHead;//后续此值为蛇尾坐标
+			while (csSnakeData.GetMap(stCurrent) != NULL_BLOCK)
 			{
-				My_Point stMove = stCurrent;
-				stMove += stSnakeMove[j];//移动
-
-				if (!Cross(csSnakeData, stMove) && csSnakeData.GetMap(stMove) == csSnakeData.GetMap(stCurrent))//相同
+				//查看四个方向上与自身值相同的值
+				for (long j = 0; j < (long)Snake_Data::Move_Direct::Arr_Size; ++j)
 				{
-					++csSnakeData.GetMap(stMove);//递增
-					stCurrent = stMove;//移动
+					My_Point stMove = stCurrent;
+					stMove += stSnakeMove[j];//移动
+
+					if (!Cross(csSnakeData, stMove) && csSnakeData.GetMap(stMove) == csSnakeData.GetMap(stCurrent))//相同
+					{
+						--csSnakeData.GetMap(stMove);//递减
+						stCurrent = stMove;//移动
+						break;//处理下一个位置
+					}
 				}
 			}
 		}
 
-		//更新蛇尾
-		if (!bEatFood)
-		{
-			csSnakeData.GetMap(stCurrent) = NULL_BLOCK;//设置蛇尾为空
-		}
+		//设置新蛇头位置
+		csSnakeData.GetSnakeHead() = stNewSnakeHead;
 
 		return true;
 	}
@@ -360,6 +377,11 @@ private:
 	}
 
 	static void DrawSnakeBody(void)//绘制蛇身
+	{
+		fputs("□", stdout);
+	}
+
+	static void DrawSnakeTail(void)//绘制蛇尾
 	{
 		fputs("□", stdout);
 	}
@@ -415,15 +437,21 @@ public:
 			DrawBorder();//绘制左边界
 			for (long x = 0; x < csSnakeData.GetMapWidth(); ++x)
 			{
-				if (csSnakeData.GetMap({x,y}) == NULL_BLOCK)
+				long lCurrent = csSnakeData.GetMap({x,y});
+
+				if (lCurrent == NULL_BLOCK)
 				{
 					DrawNull();
 				}
-				else if (csSnakeData.GetMap({x,y}) == SNAKE_HEAD)
+				else if (lCurrent == csSnakeData.GetSnakeLength())
 				{
 					DrawSnakeHead();
 				}
-				else if (csSnakeData.GetMap({x,y}) == FOOD_MARK)
+				else if (lCurrent == SNAKE_TAIL)
+				{
+					DrawSnakeTail();
+				}
+				else if (lCurrent == FOOD_MARK)
 				{
 					DrawFood();
 				}
@@ -475,20 +503,28 @@ public:
 class Game
 {
 private:
-	Snake_Data &csSnakeData;
-	long lLoopSpeed;
+	Snake_Data csSnakeData;
 public:
-	Game(Snake_Data &_csSnakeData, long _lLoopSpeed) :
-		csSnakeData(_csSnakeData), lLoopSpeed(_lLoopSpeed)
+	Game(Snake_Data &&_csSnakeData) :
+		csSnakeData(std::move(_csSnakeData))
 	{
-		//设置缓冲区为全缓冲，大小为地图大小
-		setvbuf(stdout, NULL, _IOFBF, csSnakeData.GetMapHigh() * csSnakeData.GetMapWidth() + 1);
+		Control::SetOutputFullMode(csSnakeData);
 		//初始化随机数发生器
-		srand((unsigned int)time(NULL));
+		srand((unsigned int)time(NULL));//后续修改随机数发生器
 		//输出开始信息
 		Draw::InfoDraw();
 		//按任意键继续
 		Control::GetAnyKey();
+	}
+
+	~Game(void)
+	{
+		Control::SetOutputLineMode();
+	}
+
+	Snake_Data &GetSnakeData(void)
+	{
+		return csSnakeData;
 	}
 
 	void Init(void)
@@ -497,21 +533,11 @@ public:
 		Control::ProduceFood(csSnakeData);
 	}
 
-	void ChangeLoopSpeed(long lNewLoopSpeed)
-	{
-		lLoopSpeed = lNewLoopSpeed;
-	}
-
-	long GetLoopSpeed(void) const
-	{
-		return lLoopSpeed;
-	}
-
 	bool Loop(void)
 	{
 		while (true)
 		{
-			Control::Wait(lLoopSpeed);
+			Control::Wait(csSnakeData.GetMoveInterval());
 			Control::ChangeDirect(csSnakeData, Control::Input());
 
 			if (!Control::Move(csSnakeData))
