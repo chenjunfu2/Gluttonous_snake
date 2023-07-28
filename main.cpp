@@ -4,17 +4,26 @@
 #define MAP_WIDTH	32//x
 #define MAP_HIGH	18//y
 //初始移动毫秒数
-#define MOVE_SPEED 160
+#define MOVE_INTERVAL 160
 //初始移动方向
 #define INITIAL_DIRECT Snake_Data::Move_Direct::Down
 
 int main(int argc, char *argv[])
 {
+	/*
+	启动命令格式
+	[地图宽] [地图高] [移动间隔] [蛇头初始坐标X] [蛇头初始坐标y] [初始移动方向]
+
+	参数可以省略，省略的部分自动使用默认参数，多余、错误参数将被忽略，
+	[蛇头初始坐标X] [蛇头初始坐标y]默认使用[地图宽] [地图高]的二分之一
+	[初始移动方向]取值为0 1 2 3分别对应上 下 左 右
+	*/
+
 	long lGameData[6]=
 	{
 		MAP_WIDTH, 
 		MAP_HIGH, 
-		MOVE_SPEED,
+		MOVE_INTERVAL,
 	};
 
 	long lInputData[6];
