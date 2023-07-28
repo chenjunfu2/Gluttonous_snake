@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if (lInputData[3] >= 0 && lInputData[3] < MAP_WIDTH)
+	if (lInputData[3] >= 0 && lInputData[3] < lGameData[0])
 	{
 		lGameData[3] = lInputData[3];
 	}
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 		lGameData[3] = lGameData[0] / 2;
 	}
 
-	if (lInputData[4] >= 0 && lInputData[4] < MAP_HIGH)
+	if (lInputData[4] >= 0 && lInputData[4] < lGameData[1])
 	{
 		lGameData[4] = lInputData[4];
 	}
