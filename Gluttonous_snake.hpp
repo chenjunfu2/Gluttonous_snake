@@ -509,7 +509,10 @@ public:
 	Game(Snake_Data &&_csSnakeData) :
 		csSnakeData(std::move(_csSnakeData))
 	{
+		//设置输出模式
 		Control::SetOutputFullMode(csSnakeData);
+		//清屏
+		Draw::Clear();
 		//初始化随机数发生器
 		srand((unsigned int)time(NULL));//后续修改随机数发生器
 		//输出开始信息
