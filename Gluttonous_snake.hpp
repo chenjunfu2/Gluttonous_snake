@@ -318,6 +318,8 @@ public:
 		{
 			//更新新蛇头为原先蛇头的值+1，并不移动蛇尾
 			csSnakeData.GetMap(stNewSnakeHead) = csSnakeData.GetSnakeLength() + 1;
+			//设置新蛇头位置
+			csSnakeData.GetSnakeHead() = stNewSnakeHead;
 			//生成新的食物
 			ProduceFood(csSnakeData);
 		}
@@ -325,6 +327,8 @@ public:
 		{
 			//更新新蛇头为原先蛇头的值
 			csSnakeData.GetMap(stNewSnakeHead) = csSnakeData.GetSnakeLength();
+			//设置新蛇头位置
+			csSnakeData.GetSnakeHead() = stNewSnakeHead;
 			
 			//更新蛇身与蛇尾
 			My_Point stCurrent = stNewSnakeHead;//后续此值为蛇尾坐标
@@ -346,8 +350,7 @@ public:
 			}
 		}
 
-		//设置新蛇头位置
-		csSnakeData.GetSnakeHead() = stNewSnakeHead;
+		
 
 		return true;
 	}
@@ -511,18 +514,11 @@ public:
 	{
 		//设置输出模式
 		Control::SetOutputFullMode(csSnakeData);
-		//清屏
-		Draw::Clear();
-		//初始化随机数发生器
-		srand((unsigned int)time(NULL));//后续修改随机数发生器
-		//输出开始信息
-		Draw::InfoDraw();
-		//按任意键继续
-		Control::GetAnyKey();
 	}
 
 	~Game(void)
 	{
+		//设置输出模式
 		Control::SetOutputLineMode();
 	}
 
@@ -533,6 +529,13 @@ public:
 
 	void Init(void)
 	{
+		Draw::Clear();//清屏
+		Draw::InfoDraw();//输出开始信息
+		Control::GetAnyKey();//按任意键继续
+		Draw::Clear();//清屏
+
+		//初始化随机数发生器
+		srand((unsigned int)time(NULL));//后续修改随机数发生器
 		//初始化食物
 		Control::ProduceFood(csSnakeData);
 	}
