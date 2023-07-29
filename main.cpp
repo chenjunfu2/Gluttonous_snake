@@ -1,12 +1,16 @@
-﻿#include "Gluttonous_snake.hpp"
+﻿#include "Play_Game.hpp"
 
 //地图默认大小
-#define MAP_WIDTH	32//x
-#define MAP_HIGH	18//y
+#define DEFAULT_MAP_WIDTH	32//x
+#define DEFAULT_MAP_HIGH	18//y
 //初始移动毫秒数
-#define MOVE_INTERVAL 160
-//初始移动方向
-#define INITIAL_DIRECT Snake_Data::Move_Direct::Down
+#define DEFAULT_MOVE_INTERVAL 160
+//初始蛇头位置
+#define DEFAULT_BEG_X		0
+#define DEFAULT_BEG_Y		0
+//初始蛇移动方向
+#define DEFAULT_MOVE_DIRECT Game_Data::Move_Direct::Right
+
 
 int main(int argc, char *argv[])
 {
@@ -19,22 +23,39 @@ int main(int argc, char *argv[])
 	[初始移动方向]取值为0 1 2 3分别对应上 下 左 右
 	*/
 
-	long lGameData[6]=
+	enum :long
 	{
-		MAP_WIDTH, 
-		MAP_HIGH, 
-		MOVE_INTERVAL,
+		arr_beg = 0,
+		map_width = arr_beg,
+		map_high,
+		mov_intertval,
+		beg_x,
+		beg_y,
+		beg_direct,
+		arr_end,
 	};
 
-	long lInputData[6];
+	long lGameData[arr_end] =
+	{
+		DEFAULT_MAP_WIDTH,
+		DEFAULT_MAP_HIGH,
+		DEFAULT_MOVE_INTERVAL,
+		DEFAULT_BEG_X,
+		DEFAULT_BEG_Y,
+		(long)DEFAULT_MOVE_DIRECT,
+	};
+
+	long lInputData[arr_end];
 	memset(lInputData, -1, sizeof(lInputData));
 
-	for (int i = 1; i < argc && (i - 1) < 6; ++i)
+	//转换命令参数
+	for (int i = arr_beg; i < arr_end && i < argc; ++i)
 	{
-		(void)sscanf(argv[i], "%ld", &lInputData[i - 1]);
+		(void)sscanf(argv[i + 1], "%ld", &lInputData[i]);
 	}
 
-	for (int i = 0; i < 3; ++i)
+	//校验命令参数
+	for (int i = map_width; i <= mov_intertval; ++i)
 	{
 		if (lInputData[i] > 0)
 		{
@@ -42,42 +63,28 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if (lInputData[3] >= 0 && lInputData[3] < lGameData[0])
+	if (lInputData[beg_x] >= 0 && lInputData[beg_x] < lGameData[map_width])
 	{
-		lGameData[3] = lInputData[3];
-	}
-	else
-	{
-		lGameData[3] = lGameData[0] / 2;
+		lGameData[beg_x] = lInputData[beg_x];
 	}
 
-	if (lInputData[4] >= 0 && lInputData[4] < lGameData[1])
+	if (lInputData[beg_y] >= 0 && lInputData[beg_y] < lGameData[map_high])
 	{
-		lGameData[4] = lInputData[4];
-	}
-	else
-	{
-		lGameData[4] = lGameData[1] / 2;
+		lGameData[beg_y] = lInputData[beg_y];
 	}
 
-	if (lInputData[5] >= 0 && lInputData[5] < (long)Snake_Data::Move_Direct::Arr_Size)
+	if (lInputData[beg_direct] >= (long)Game_Data::Move_Direct::Arr_Beg &&
+		lInputData[beg_direct] < (long)Game_Data::Move_Direct::Arr_End)
 	{
-		lGameData[5] = lInputData[5];
-	}
-	else
-	{
-		lGameData[5] = (long)INITIAL_DIRECT;
+		lGameData[beg_direct] = lInputData[beg_direct];
 	}
 
-	Game csGame(Snake_Data{lGameData[0],lGameData[1],lGameData[2],My_Point{lGameData[3],lGameData[4]}, (Snake_Data::Move_Direct)lGameData[5]});
-
-	csGame.Init();
-	while (csGame.Loop())
+	//开始游戏
+	Play_Game csGame(Game_Data{lGameData[map_width],lGameData[map_high],lGameData[mov_intertval]});
+	do
 	{
-		csGame.GetSnakeData().Reset(My_Point{lGameData[3],lGameData[4]}, (Snake_Data::Move_Direct)lGameData[5]);
-		csGame.Init();
-		Draw::Clear();
-	}
+		csGame.Init(My_Point{lGameData[beg_x],lGameData[beg_y]}, (Game_Data::Move_Direct)lGameData[beg_direct]);
+	}while (csGame.Loop());
 
 	return 0;
 }
