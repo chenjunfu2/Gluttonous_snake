@@ -6,7 +6,7 @@
 #include <Windows.h>
 #include <random>
 
-class Control
+class Game_Control
 {
 private:
 	static bool Cross(const Game_Data &csGameData, const My_Point &stNewSnakeHead)
@@ -37,7 +37,7 @@ public:
 
 	static bool Win(const Game_Data &csGameData)
 	{
-		if (csGameData.GetSnakeLength() == csGameData.GetMapHigh() * csGameData.GetMapWidth())
+		if (csGameData.GetSnakeLength() >= csGameData.GetWinLength())
 		{
 			return true;
 		}
@@ -147,23 +147,30 @@ public:
 		}
 	}
 
-	static void ProduceFood(Game_Data &csGameData, std::mt19937 csRandom)//后续修改生成器
+	static void ProduceFood(Game_Data &csGameData, std::mt19937 &csRandom)//后续修改生成器
 	{
-		if (csGameData.GetSnakeLength() >= csGameData.GetMapHigh() * csGameData.GetMapWidth())
+		long lFreeSpace = csGameData.GetMapHigh() * csGameData.GetMapWidth() - csGameData.GetSnakeLength();
+		long lProduceNum = min(lFreeSpace, csGameData.GetFoodMaxNum());//获取空位最小值和生成大小最小值
+
+		if (lProduceNum <= 0)//地图没空间了
 		{
 			return;//生成失败
 		}
 
 		My_Point stFood;
-		std::uniform_int_distribution<long> csDistX(0, csGameData.GetMapWidth() - 1);//max能取到
-		std::uniform_int_distribution<long> csDistY(0, csGameData.GetMapHigh() - 1);//所以要-1
-		do
-		{
-			stFood.x = csDistX(csRandom);
-			stFood.y = csDistY(csRandom);
-		} while (csGameData.GetMap(stFood) != 0);//遇到空地为止
+		std::uniform_int_distribution<long> csDistX(0, csGameData.GetMapWidth() - 1);//max能取到所以要-1
+		std::uniform_int_distribution<long> csDistY(0, csGameData.GetMapHigh() - 1);//同上
 
-		csGameData.GetMap(stFood) = FOOD_BLOCK;
+		for (csGameData.GetCurrentFoodNum(); csGameData.GetCurrentFoodNum() < lProduceNum; csGameData.IncCurrentFoodNum())
+		{
+			do
+			{
+				stFood.x = csDistX(csRandom);
+				stFood.y = csDistY(csRandom);
+			} while (csGameData.GetMap(stFood) != NULL_BLOCK);//遇到空地为止
+
+			csGameData.GetMap(stFood) = FOOD_BLOCK;
+		}
 	}
 
 	static bool Move(Game_Data &csGameData, std::mt19937 &csRandom)
@@ -178,16 +185,20 @@ public:
 			return false;
 		}
 
+		//递增移动距离
+		csGameData.IncTravelDistance();
+
 		//判断是否吃到食物
 		if (csGameData.GetMap(stNewSnakeHead) == FOOD_BLOCK)
 		{
+			//递减食物数
+			csGameData.DecCurrentFoodNum();
 			//更新新蛇头为原先蛇头的值+1，并不移动蛇尾
 			csGameData.GetMap(stNewSnakeHead) = csGameData.GetSnakeLength() + 1;
 			//设置新蛇头位置
 			csGameData.GetSnakeHead() = stNewSnakeHead;
 			//生成新的食物
 			ProduceFood(csGameData, csRandom);
-
 			return true;
 		}
 

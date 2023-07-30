@@ -71,13 +71,13 @@ private:
 	}
 
 public:
-	static void Info(void)
+	static void Start(void)
 	{
 		printf("---贪吃蛇---\nW--上  A--下\nS--左  D--右\n\nP--暂停/继续\n------------\n\n按任意键开始...");
 		Flush();
 	}
 
-	static void Draw(const Game_Data &csGameData)
+	static void Interface(const Game_Data &csGameData)
 	{
 		//隐藏光标并定位到开头
 		HideCursor();
@@ -121,8 +121,16 @@ public:
 		//绘制下边界
 		LineBorderBlock(csGameData);
 
-		printf("长度:%ld\n", csGameData.GetSnakeLength());
+		//刷新
+		Flush();
+	}
 
+	static void Info(const Game_Data &csGameData)
+	{
+		printf("移动距离: %ld\n蛇总长度/获胜长度: %ld/%ld\n",
+			csGameData.GetTravelDistance(),
+			csGameData.GetSnakeLength(),
+			csGameData.GetWinLength());
 		//刷新
 		Flush();
 	}
