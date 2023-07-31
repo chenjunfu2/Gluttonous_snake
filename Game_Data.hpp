@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <utility>
 #include <stdexcept>
+#include <random>
 
 class Game_Data
 {
@@ -21,6 +22,13 @@ public:
 		No_Move = Arr_End,
 	};
 
+	static constexpr My_Point stSnakeMove[(long)Game_Data::Move_Direct::Arr_End] =//移动方向
+	{
+		{ 0,-1},
+		{ 0, 1},
+		{-1, 0},
+		{ 1, 0},
+	};
 private:
 	long lMapWidth;//x
 	long lMapHigh;//y
@@ -31,10 +39,14 @@ private:
 	long lFoodMaxNum;//地图中最多出现的食物个数
 	long lCurrentFoodNum;//地图中当前的食物个数
 	long lTravelDistance;//移动距离
+
 	My_Point stSnakeHead;//头坐标
 	Move_Direct enMoveDirect;//移动方向
+	std::mt19937 csRandom;//随机数生成器
+
+	bool bEatAllToProduce;//食物生成策略：吃掉所有食物生成/吃掉一个生成一个
 public:
-	Game_Data(long _lMapWidth, long _lMapHigh, long _lMoveInterval, long _lWinLength = -1, long _lFoodMaxNum = 1) :
+	Game_Data(long _lMapWidth, long _lMapHigh, long _lMoveInterval, long _lWinLength = -1, long _lFoodMaxNum = 1, unsigned int _uiRandomSeed = 0, bool _bEatAllToProduce = true) :
 		lMapWidth		(_lMapWidth), 
 		lMapHigh		(_lMapHigh), 
 		lMoveInterval	(_lMoveInterval),
@@ -43,7 +55,9 @@ public:
 		lCurrentFoodNum	(0),
 		lTravelDistance	(0),
 		stSnakeHead		({0,0}), 
-		enMoveDirect	(Move_Direct::Right)
+		enMoveDirect	(Move_Direct::Right),
+		csRandom		(_uiRandomSeed),
+		bEatAllToProduce(_bEatAllToProduce)
 	{
 		if (lMapWidth <= 0 || lMapHigh <= 0)
 		{
@@ -88,7 +102,9 @@ public:
 		lCurrentFoodNum	(_Move.lCurrentFoodNum),
 		lTravelDistance	(_Move.lTravelDistance),
 		stSnakeHead		(std::move(_Move.stSnakeHead)),
-		enMoveDirect	(_Move.enMoveDirect)
+		enMoveDirect	(_Move.enMoveDirect),
+		csRandom		(std::move(_Move.csRandom)),
+		bEatAllToProduce(_Move.bEatAllToProduce)
 	{
 		_Move.lMapWidth = 0;
 		_Move.lMapHigh = 0;
@@ -100,6 +116,8 @@ public:
 		_Move.lTravelDistance = 0;
 		//_Move.stSnakeHead 通过std::move，无需重置
 		_Move.enMoveDirect = Move_Direct::No_Move;
+		//_Move.csRandom 通过std::move，无需重置
+		_Move.bEatAllToProduce = false;
 	}
 
 	void ResizeMap(long _lMapWidth, long _lMapHigh)
@@ -218,6 +236,31 @@ public:
 	const Move_Direct &GetMoveDirect(void) const
 	{
 		return enMoveDirect;
+	}
+
+	std::mt19937 &GetRandom(void)
+	{
+		return csRandom;
+	}
+
+	const std::mt19937 &GetRandom(void) const
+	{
+		return csRandom;
+	}
+
+	void SetRandomSeed(unsigned int uiRandomSeed)
+	{
+		csRandom = std::mt19937(uiRandomSeed);
+	}
+
+	bool &GetEatAllToProduce(void)
+	{
+		return bEatAllToProduce;
+	}
+
+	const bool &GetEatAllToProduce(void) const
+	{
+		return bEatAllToProduce;
 	}
 
 	long &GetMap(const My_Point &stPoint)

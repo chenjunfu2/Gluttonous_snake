@@ -9,7 +9,6 @@ class Game_Play
 {
 private:
 	Game_Data csGameData;
-	std::mt19937 csRandom;
 	My_Point stSnakeHeadBegin;
 	Game_Data::Move_Direct enMoveDirectBegin;
 private:
@@ -23,18 +22,14 @@ private:
 		csGameData.GetMap(csGameData.GetSnakeHead()) = SNAKE_TAIL;//初始化地图中蛇头位置的值
 	}
 public:
-	Game_Play(Game_Data &&_csSnakeData, unsigned int uiRandSeed, const My_Point &_stSnakeHeadBegin = {0,0}, Game_Data::Move_Direct _enMoveDirectBegin = Game_Data::Move_Direct::Right) :
-		csGameData(std::move(_csSnakeData)), csRandom(uiRandSeed), stSnakeHeadBegin(_stSnakeHeadBegin), enMoveDirectBegin(_enMoveDirectBegin)
+	Game_Play(Game_Data &&_csSnakeData, const My_Point &_stSnakeHeadBegin = {0,0}, Game_Data::Move_Direct _enMoveDirectBegin = Game_Data::Move_Direct::Right) :
+		csGameData(std::move(_csSnakeData)), stSnakeHeadBegin(_stSnakeHeadBegin), enMoveDirectBegin(_enMoveDirectBegin)
 	{
-		//设置输出模式
-		Game_Control::SetOutputFullMode(csGameData);
+		//设置IO模式
+		Game_Control::SetIOMode(csGameData);
 	}
 
-	~Game_Play(void)
-	{
-		//设置输出模式
-		Game_Control::SetOutputLineMode();
-	}
+	~Game_Play(void) = default;
 
 	const Game_Data &GetSnakeData(void) const
 	{
@@ -51,17 +46,17 @@ public:
 		//重置数据
 		Reset();
 		//初始化食物
-		Game_Control::ProduceFood(csGameData, csRandom);
+		Game_Control::ProduceFood(csGameData);
 	}
 
 	std::mt19937 &GetRandom(void)
 	{
-		return csRandom;
+		return csGameData.GetRandom();
 	}
 
-	void SetRandomSeed(unsigned int uiRandSeed = 0)
+	void SetRandomSeed(unsigned int uiRandomSeed = 0)
 	{
-		csRandom = std::mt19937(uiRandSeed);
+		csGameData.SetRandomSeed(uiRandomSeed);
 	}
 
 	My_Point &GetSnakeHeadBegin(void)
@@ -80,7 +75,7 @@ public:
 		{
 			Game_Control::Wait(csGameData.GetMoveInterval());
 			Game_Control::ChangeDirect(csGameData, Game_Control::Input());
-			bool bLose = !Game_Control::Move(csGameData, csRandom);
+			bool bLose = !Game_Control::Move(csGameData);
 			Game_Draw::Interface(csGameData);
 			Game_Draw::Info(csGameData);
 
@@ -96,7 +91,7 @@ public:
 			}
 		}
 
-		Game_Draw::End("N", "L");
-		return Game_Control::SwitchInput("Nn", 2, "Ll", 2);
+		Game_Draw::End(L"N", L"L");
+		return Game_Control::SwitchInput(L"Nn", 2, L"Ll", 2);
 	}
 };

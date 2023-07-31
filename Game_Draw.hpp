@@ -1,69 +1,88 @@
-#pragma once
+ï»¿#pragma once
 
 #include "Game_Data.hpp"
 #include "Game_Sign.hpp"
 
 #include <stdio.h>
 #include <Windows.h>
+#include <wchar.h>
 
 class Game_Draw
 {
 private:
-	//»æÖÆ
-	static void BorderBlock(void)//»æÖÆ±ß½ç
+	//ç»˜åˆ¶
+	static void BorderBlock(void)//ç»˜åˆ¶è¾¹ç•Œ
 	{
-		fputs("¡ö", stdout);
+		fputws(L"â– ", stdout);
 	}
 
-	static void NullBlock(void)//»æÖÆ¿ÕµØ
+	static void NullBlock(void)//ç»˜åˆ¶ç©ºåœ°
 	{
-		fputs("  ", stdout);
+		fputws(L"  ", stdout);
 	}
 
-	static void FoodBlock(void)//»æÖÆÊ³Îï
+	static void FoodBlock(void)//ç»˜åˆ¶é£Ÿç‰©
 	{
-		fputs("¡ó", stdout);
+		fputws(L"â—‡", stdout);
 	}
 
-	static void SnakeHead(void)//»æÖÆÉßÍ·
+	static void SnakeHead(Game_Data::Move_Direct enMoveDirect)//ç»˜åˆ¶è›‡å¤´
 	{
-		fputs("¡ğ", stdout);
+		//fputws(L"â—‹", stdout);
+		static constexpr const wchar_t *pSnakeHeadArr[(long)Game_Data::Move_Direct::Arr_End + 1] = 
+		{
+			L"âˆ©",
+			L"âˆª",
+			L"âŠ‚",
+			L"âŠƒ",
+			L"â—‹",
+		};
+		fputws(pSnakeHeadArr[(long)enMoveDirect], stdout);
 	}
 
-	static void SnakeBody(void)//»æÖÆÉßÉí
+	static void SnakeBody(void)//ç»˜åˆ¶è›‡èº«
 	{
-		fputs("¡õ", stdout);
+		fputws(L"â–¡", stdout);
 	}
 
-	static void SnakeTail(void)//»æÖÆÉßÎ²
+	static void SnakeTail(Game_Data::Move_Direct enMoveDirect)//ç»˜åˆ¶è›‡å°¾
 	{
-		fputs("¡õ", stdout);
+		//fputws(L"â–¡", stdout);
+		static constexpr const wchar_t *pSnakeTailArr[(long)Game_Data::Move_Direct::Arr_End + 1] =//æ³¨æ„æ­¤å¤„ä¸Šä¸‹ å·¦å³åˆ†åˆ«ç›¸å
+		{
+			L"âˆ¨",
+			L"âˆ§",
+			L"ï¼",
+			L"ï¼œ",
+			L"â–¡",
+		};
+		fputws(pSnakeTailArr[(long)enMoveDirect], stdout);
 	}
 
-	static void RewindOutput(void)//»Øµ½¿ªÍ·
+	static void RewindOutput(void)//å›åˆ°å¼€å¤´
 	{
 		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), {0,0});
 	}
 
-	static void NewLine(void)//»»ĞĞ
+	static void NewLine(void)//æ¢è¡Œ
 	{
-		putchar('\n');
+		putwchar(L'\n');
 	}
 
-	static void HideCursor(void)//Òş²Ø¹â±ê
+	static void HideCursor(void)//éšè—å…‰æ ‡
 	{
 		CONSOLE_CURSOR_INFO info = {1,0};
 		SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
 	}
 
-	static void Flush(void)//Ë¢ĞÂÊä³ö
+	static void Flush(void)//åˆ·æ–°è¾“å‡º
 	{
 		fflush(stdout);
 	}
 
-	static void LineBorderBlock(const Game_Data &csGameData)//»æÖÆĞĞ±ß½ç
+	static void LineBorderBlock(const Game_Data &csGameData)//ç»˜åˆ¶è¡Œè¾¹ç•Œ
 	{
-		for (long x = 0; x < csGameData.GetMapWidth() + 2; ++x)//+2ÊÇÒòÎª×ó²àºÍÓÒ²à¸÷ÓĞ1¸ñ±ß½ç
+		for (long x = 0; x < csGameData.GetMapWidth() + 2; ++x)//+2æ˜¯å› ä¸ºå·¦ä¾§å’Œå³ä¾§å„æœ‰1æ ¼è¾¹ç•Œ
 		{
 			BorderBlock();
 		}
@@ -73,22 +92,22 @@ private:
 public:
 	static void Start(void)
 	{
-		printf("---Ì°³ÔÉß---\nW--ÉÏ  A--ÏÂ\nS--×ó  D--ÓÒ\n\nP--ÔİÍ£/¼ÌĞø\n------------\n\n°´ÈÎÒâ¼ü¿ªÊ¼...");
+		wprintf(L"---è´ªåƒè›‡---\nW--ä¸Š  A--ä¸‹\nS--å·¦  D--å³\n\nP--æš‚åœ/ç»§ç»­\n------------\n\næŒ‰ä»»æ„é”®å¼€å§‹...");
 		Flush();
 	}
 
 	static void Interface(const Game_Data &csGameData)
 	{
-		//Òş²Ø¹â±ê²¢¶¨Î»µ½¿ªÍ·
+		//éšè—å…‰æ ‡å¹¶å®šä½åˆ°å¼€å¤´
 		HideCursor();
 		RewindOutput();
 
-		//»æÖÆÉÏ±ß½ç
+		//ç»˜åˆ¶ä¸Šè¾¹ç•Œ
 		LineBorderBlock(csGameData);
 
 		for (long y = 0; y < csGameData.GetMapHigh(); ++y)
 		{
-			BorderBlock();//»æÖÆ×ó±ß½ç
+			BorderBlock();//ç»˜åˆ¶å·¦è¾¹ç•Œ
 			for (long x = 0; x < csGameData.GetMapWidth(); ++x)
 			{
 				long lCurrent = csGameData.GetMap({x,y});
@@ -97,117 +116,133 @@ public:
 				{
 					NullBlock();
 				}
-				else if (lCurrent == csGameData.GetSnakeLength())//Èç¹ûÉßÖ»ÓĞ1¸ñ£¬Í·ºÍÎ²ÊÇÏàÍ¬µÄ£¬µ«ÊÇÍ·²¿ÓÅÏÈ»æÖÆ
+				else if (lCurrent == csGameData.GetSnakeLength())//å¦‚æœè›‡åªæœ‰1æ ¼ï¼Œå¤´å’Œå°¾æ˜¯ç›¸åŒçš„ï¼Œä½†æ˜¯å¤´éƒ¨ä¼˜å…ˆç»˜åˆ¶
 				{
-					SnakeHead();
+					SnakeHead(csGameData.GetMoveDirect());
+					//SnakeHead(Game_Data::Move_Direct::Arr_End);
 				}
 				else if (lCurrent == SNAKE_TAIL)
 				{
-					SnakeTail();
+					//å¦‚æœæ²¡æ‰¾åˆ°åˆ™æŒ‰èº«ä½“å½¢å¼è¾“å‡º
+					Game_Data::Move_Direct enMoveDirect = Game_Data::Move_Direct::Arr_End;
+					//æŸ¥çœ‹å››ä¸ªæ–¹å‘ä¸Šæ¯”è‡ªèº«å¤§1çš„å€¼
+					for (long i = (long)Game_Data::Move_Direct::Arr_Beg; i < (long)Game_Data::Move_Direct::Arr_End; ++i)
+					{
+						My_Point stCurrent = {x,y}, stMove = stCurrent;
+						stMove += Game_Data::stSnakeMove[i];//ç§»åŠ¨
+
+						if (!Game_Control::Cross(csGameData, stMove) && csGameData.GetMap(stMove) == csGameData.GetMap(stCurrent) + 1)//æ¯”è‡ªèº«å¤§1
+						{
+							enMoveDirect = (Game_Data::Move_Direct)i;
+							break;//æ‰¾åˆ°äº†
+						}
+					}
+
+					SnakeTail(enMoveDirect);
 				}
 				else if (lCurrent == FOOD_BLOCK)
 				{
 					FoodBlock();
 				}
-				else//ÉßÉí
+				else//è›‡èº«
 				{
 					SnakeBody();
 				}
 			}
-			BorderBlock();//»æÖÆÓÒ±ß½ç
-			NewLine();//µ½ÏÂÒ»ĞĞ»æÖÆ
+			BorderBlock();//ç»˜åˆ¶å³è¾¹ç•Œ
+			NewLine();//åˆ°ä¸‹ä¸€è¡Œç»˜åˆ¶
 		}
 
-		//»æÖÆÏÂ±ß½ç
+		//ç»˜åˆ¶ä¸‹è¾¹ç•Œ
 		LineBorderBlock(csGameData);
 
-		//Ë¢ĞÂ
+		//åˆ·æ–°
 		Flush();
 	}
 
 	static void Info(const Game_Data &csGameData)
 	{
-		printf("ÒÆ¶¯¾àÀë: %ld\nÉß×Ü³¤¶È/»ñÊ¤³¤¶È: %ld/%ld\n",
+		wprintf(L"ç§»åŠ¨è·ç¦»: %ld\nè›‡æ€»é•¿åº¦/è·èƒœé•¿åº¦: %ld/%ld\n",
 			csGameData.GetTravelDistance(),
 			csGameData.GetSnakeLength(),
 			csGameData.GetWinLength());
-		//Ë¢ĞÂ
+		//åˆ·æ–°
 		Flush();
 	}
 
 	static void Lose(void)
 	{
-		printf("\nÄãÊäÁË£¡\n");
+		wprintf(L"\nä½ è¾“äº†ï¼\n");
 		Flush();
 	}
 
 	static void Win(void)
 	{
-		printf("\nÄãÓ®ÁË£¡\n");
+		wprintf(L"\nä½ èµ¢äº†ï¼\n");
 		Flush();
 	}
 
-	static void End(const char *pNew, const char *pLeave)
+	static void End(const wchar_t *pNew, const wchar_t *pLeave)
 	{
-		printf("ÊäÈë%sĞÂ¿ªÒ»¾Ö\nÊäÈë%s½áÊøÓÎÏ·", pNew, pLeave);
+		wprintf(L"è¾“å…¥%sæ–°å¼€ä¸€å±€\nè¾“å…¥%sç»“æŸæ¸¸æˆ", pNew, pLeave);
 		Flush();
 	}
 
-	static void Clear(void)//ÇåÆÁ
+	static void Clear(void)//æ¸…å±
 	{
 		system("cls");
 	}
 };
 
 /*
-\033[ÏÔÊ¾·½Ê½£»Ç°¾°É«£»±³¾°É«m
+\033[æ˜¾ç¤ºæ–¹å¼ï¼›å‰æ™¯è‰²ï¼›èƒŒæ™¯è‰²m
 
-ANSI¿ØÖÆÂë :
-\033[0m   ¹Ø±ÕËùÓĞÊôĞÔ
-\033[1m   ÉèÖÃ¸ßÁÁ¶È
-\033[4m   ÏÂ»®Ïß
-\033[5m   ÉÁË¸
-\033[7m   ·´ÏÔ
-\033[8m   ÏûÒş
-\033[30m   --   \033[37m   ÉèÖÃÇ°¾°É«
-\033[40m   --   \033[47m   ÉèÖÃ±³¾°É«
-\033[nA   ¹â±êÉÏÒÆnĞĞ
-\033[nB   ¹â±êÏÂÒÆnĞĞ
-\033[nC   ¹â±êÓÒÒÆnĞĞ
-\033[nD   ¹â±ê×óÒÆnĞĞ
-\033[y;xH ÉèÖÃ¹â±êÎ»ÖÃ
-\033[2J   ÇåÆÁ
-\033[K   Çå³ı´Ó¹â±êµ½ĞĞÎ²µÄÄÚÈİ
-\033[s   ±£´æ¹â±êÎ»ÖÃ
-\033[u   »Ö¸´¹â±êÎ»ÖÃ
-\033[?25l   Òş²Ø¹â±ê
-\033[?25h   ÏÔÊ¾¹â±ê
+ANSIæ§åˆ¶ç  :
+\033[0m   å…³é—­æ‰€æœ‰å±æ€§
+\033[1m   è®¾ç½®é«˜äº®åº¦
+\033[4m   ä¸‹åˆ’çº¿
+\033[5m   é—ªçƒ
+\033[7m   åæ˜¾
+\033[8m   æ¶ˆéš
+\033[30m   --   \033[37m   è®¾ç½®å‰æ™¯è‰²
+\033[40m   --   \033[47m   è®¾ç½®èƒŒæ™¯è‰²
+\033[nA   å…‰æ ‡ä¸Šç§»nè¡Œ
+\033[nB   å…‰æ ‡ä¸‹ç§»nè¡Œ
+\033[nC   å…‰æ ‡å³ç§»nè¡Œ
+\033[nD   å…‰æ ‡å·¦ç§»nè¡Œ
+\033[y;xH è®¾ç½®å…‰æ ‡ä½ç½®
+\033[2J   æ¸…å±
+\033[K   æ¸…é™¤ä»å…‰æ ‡åˆ°è¡Œå°¾çš„å†…å®¹
+\033[s   ä¿å­˜å…‰æ ‡ä½ç½®
+\033[u   æ¢å¤å…‰æ ‡ä½ç½®
+\033[?25l   éšè—å…‰æ ‡
+\033[?25h   æ˜¾ç¤ºå…‰æ ‡
 
-Àı£º
-\033[2J\033[0;0H  ÇåÆÁÇÒ½«¹â±êÖÃ¶¥
-\033[1;31mhello world\033[0m  Ê¹ÓÃ¸ßÁÁºìÉ«Êä³öhello world²¢»Ö¸´ÑÕÉ«ÎªNONE
+ä¾‹ï¼š
+\033[2J\033[0;0H  æ¸…å±ä¸”å°†å…‰æ ‡ç½®é¡¶
+\033[1;31mhello world\033[0m  ä½¿ç”¨é«˜äº®çº¢è‰²è¾“å‡ºhello worldå¹¶æ¢å¤é¢œè‰²ä¸ºNONE
 
 
-ÑÕÉ«·ÖÎª±³¾°É«ºÍ×ÖÌåÉ«£¬30~39ÓÃÀ´ÉèÖÃ×ÖÌåÉ«£¬40~49ÉèÖÃ±³¾°£º
+é¢œè‰²åˆ†ä¸ºèƒŒæ™¯è‰²å’Œå­—ä½“è‰²ï¼Œ30~39ç”¨æ¥è®¾ç½®å­—ä½“è‰²ï¼Œ40~49è®¾ç½®èƒŒæ™¯ï¼š
 
-±³¾°É«                        ×ÖÌåÉ«
-40: ºÚ                          30: ºÚ
-41: ºì                          31: ºì
-42: ÂÌ                          32: ÂÌ
-43: »Æ                          33: »Æ
-44: À¶                          34: À¶
-45: ×Ï                          35: ×Ï
-46: ÉîÂÌ                        36: ÉîÂÌ
-47: °×É«                        37: °×É«
+èƒŒæ™¯è‰²                        å­—ä½“è‰²
+40: é»‘                          30: é»‘
+41: çº¢                          31: çº¢
+42: ç»¿                          32: ç»¿
+43: é»„                          33: é»„
+44: è“                          34: è“
+45: ç´«                          35: ç´«
+46: æ·±ç»¿                        36: æ·±ç»¿
+47: ç™½è‰²                        37: ç™½è‰²
 
-¼ÇµÃÔÚ´òÓ¡ÍêÖ®ºó£¬°ÑÑÕÉ«»Ö¸´³ÉNONE£¬²»È»ÔÙºóÃæµÄ´òÓ¡¶¼»á¸ú×Å±äÉ«¡£
+è®°å¾—åœ¨æ‰“å°å®Œä¹‹åï¼ŒæŠŠé¢œè‰²æ¢å¤æˆNONEï¼Œä¸ç„¶å†åé¢çš„æ‰“å°éƒ½ä¼šè·Ÿç€å˜è‰²ã€‚
 
-ÆäËüÒ»Ğ©×ªÒÆ×Ö·û
-\a alarm£¨ÄÖÖÓ£»¾¯±¨£©
-\b backspace (ÍË¸ñ¼ü)
-\f form feed£¨»»Ò³·û£©
-\t Tab£¨Tab°´¼ü£©
-\v Vertical Tab£¨Ë®Æ½ÖÆ±í£©
-\n newline£¨»»ĞĞ£©
-\r carriage return£¨»Ø³µ£©
+å…¶å®ƒä¸€äº›è½¬ç§»å­—ç¬¦
+\a alarmï¼ˆé—¹é’Ÿï¼›è­¦æŠ¥ï¼‰
+\b backspace (é€€æ ¼é”®)
+\f form feedï¼ˆæ¢é¡µç¬¦ï¼‰
+\t Tabï¼ˆTabæŒ‰é”®ï¼‰
+\v Vertical Tabï¼ˆæ°´å¹³åˆ¶è¡¨ï¼‰
+\n newlineï¼ˆæ¢è¡Œï¼‰
+\r carriage returnï¼ˆå›è½¦ï¼‰
 */

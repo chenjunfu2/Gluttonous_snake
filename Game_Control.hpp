@@ -4,11 +4,13 @@
 
 #include <conio.h>
 #include <Windows.h>
-#include <random>
+#include <io.h>
+#include <fcntl.h>
+#include <wchar.h>
 
 class Game_Control
 {
-private:
+public:
 	static bool Cross(const Game_Data &csGameData, const My_Point &stNewSnakeHead)
 	{
 		//越界
@@ -22,14 +24,6 @@ private:
 		return false;
 	}
 
-	static constexpr My_Point stSnakeMove[(long)Game_Data::Move_Direct::Arr_End] =//移动方向
-	{
-		{ 0,-1},
-		{ 0, 1},
-		{-1, 0},
-		{ 1, 0},
-	};
-public:
 	static void Wait(long lMillisecond)
 	{
 		Sleep(lMillisecond);
@@ -48,7 +42,7 @@ public:
 	{
 		while (_kbhit() != 0)//存在一个输入
 		{
-			switch (_getch())
+			switch (_getwch())
 			{
 			case 'w':
 			case 'W':
@@ -80,7 +74,7 @@ public:
 					int iGet;
 					do
 					{
-						iGet = _getch();
+						iGet = _getwch();
 					} while (iGet != 'p' && iGet != 'P');
 					Wait(50);//给50ms反应时间
 				}
@@ -93,22 +87,22 @@ public:
 		return Game_Data::Move_Direct::No_Move;
 	}
 
-	static bool SwitchInput(const char *cWaitInInputTrue, long lTrueConut, const char *cWaitInInputFalse, long lFalseConut)
+	static bool SwitchInput(const wchar_t *cWaitInInputTrue, long lTrueConut, const wchar_t *cWaitInInputFalse, long lFalseConut)
 	{
-		char ch;
+		wchar_t wch;
 		while (true)
 		{
-			ch = _getch();
+			wch = _getwch();
 			for (long i = 0; i < lTrueConut; ++i)
 			{
-				if (ch == cWaitInInputTrue[i])
+				if (wch == cWaitInInputTrue[i])
 				{
 					return true;
 				}
 			}
 			for (long i = 0; i < lFalseConut; ++i)
 			{
-				if (ch == cWaitInInputFalse[i])
+				if (wch == cWaitInInputFalse[i])
 				{
 					return false;
 				}
@@ -118,18 +112,15 @@ public:
 
 	static void GetAnyKey(void)
 	{
-		(void)_getch();
+		(void)_getwch();
 	}
 
-	static void SetOutputFullMode(const Game_Data &csGameData)
+	static void SetIOMode(const Game_Data &csGameData)
 	{
 		//设置缓冲区为全缓冲，大小为地图大小
 		setvbuf(stdout, NULL, _IOFBF, (csGameData.GetMapHigh() + 2) * (csGameData.GetMapWidth() + 2) + 1);
-	}
-
-	static void SetOutputLineMode(void)
-	{
-		setvbuf(stdout, NULL, _IOLBF, BUFSIZ);//恢复默认
+		(void)_setmode(_fileno(stdout), _O_U16TEXT);//设置输出字符集
+		(void)_setmode(_fileno(stdin), _O_U16TEXT);//设置输入字符集
 	}
 
 	static void ChangeDirect(Game_Data &csGameData, Game_Data::Move_Direct enMoveDirect)
@@ -139,7 +130,7 @@ public:
 		{
 			//判断改变的方向是否是蛇身
 			My_Point stCurrent = csGameData.GetSnakeHead();
-			stCurrent += stSnakeMove[(long)enMoveDirect];
+			stCurrent += Game_Data::stSnakeMove[(long)enMoveDirect];
 			if (csGameData.GetMap(stCurrent) == 0 || csGameData.GetMap(stCurrent) + 1 != csGameData.GetSnakeLength())//不是蛇身
 			{
 				csGameData.GetMoveDirect() = enMoveDirect;//改变方向
@@ -147,7 +138,7 @@ public:
 		}
 	}
 
-	static void ProduceFood(Game_Data &csGameData, std::mt19937 &csRandom)//后续修改生成器
+	static void ProduceFood(Game_Data &csGameData)//后续修改生成器
 	{
 		long lFreeSpace = csGameData.GetMapHigh() * csGameData.GetMapWidth() - csGameData.GetSnakeLength();
 		long lProduceNum = min(lFreeSpace, csGameData.GetFoodMaxNum());//获取空位最小值和生成大小最小值
@@ -158,6 +149,7 @@ public:
 		}
 
 		My_Point stFood;
+		std::mt19937 &csRandom = csGameData.GetRandom();
 		std::uniform_int_distribution<long> csDistX(0, csGameData.GetMapWidth() - 1);//max能取到所以要-1
 		std::uniform_int_distribution<long> csDistY(0, csGameData.GetMapHigh() - 1);//同上
 
@@ -173,11 +165,11 @@ public:
 		}
 	}
 
-	static bool Move(Game_Data &csGameData, std::mt19937 &csRandom)
+	static bool Move(Game_Data &csGameData)
 	{
 		//先将蛇头向当前方向移动一格
 		My_Point stNewSnakeHead = csGameData.GetSnakeHead();
-		stNewSnakeHead += stSnakeMove[(long)csGameData.GetMoveDirect()];
+		stNewSnakeHead += Game_Data::stSnakeMove[(long)csGameData.GetMoveDirect()];
 
 		//判断是否输了
 		if (Cross(csGameData, stNewSnakeHead) || csGameData.GetMap(stNewSnakeHead) > NULL_BLOCK)//撞墙或吃到自身
@@ -198,7 +190,10 @@ public:
 			//设置新蛇头位置
 			csGameData.GetSnakeHead() = stNewSnakeHead;
 			//生成新的食物
-			ProduceFood(csGameData, csRandom);
+			if (!csGameData.GetEatAllToProduce() || csGameData.GetCurrentFoodNum() == 0)
+			{//如果不是吃完全部再生成那么直接生成，否则判断当前食物数是否为0（短路求值特性，左边为false才测试右侧值）
+				ProduceFood(csGameData);
+			}
 			return true;
 		}
 
@@ -215,7 +210,7 @@ public:
 			for (long j = (long)Game_Data::Move_Direct::Arr_Beg; j < (long)Game_Data::Move_Direct::Arr_End; ++j)
 			{
 				My_Point stMove = stCurrent;
-				stMove += stSnakeMove[j];//移动
+				stMove += Game_Data::stSnakeMove[j];//移动
 
 				if (!Cross(csGameData, stMove) && csGameData.GetMap(stMove) == csGameData.GetMap(stCurrent))//相同
 				{
