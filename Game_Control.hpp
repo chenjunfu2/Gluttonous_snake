@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "Game_Data.hpp"
 
@@ -10,20 +10,21 @@
 
 class Game_Control
 {
-public:
-	static bool Cross(const Game_Data &csGameData, const My_Point &stNewSnakeHead)
+	static bool Lose(const Game_Data &csGameData, My_Point stNewSnakeHead)
 	{
-		//Ô½½ç
-		if (stNewSnakeHead.x >= csGameData.GetMapWidth() ||
-			stNewSnakeHead.y >= csGameData.GetMapHigh() ||
-			stNewSnakeHead.x < 0 ||
-			stNewSnakeHead.y < 0)
+		Game_Data::Map_Type enMapType = csGameData.GetMap(stNewSnakeHead).enMapType;
+
+		if (enMapType == Game_Data::Map_Type::Head ||
+			enMapType == Game_Data::Map_Type::Body ||
+			enMapType == Game_Data::Map_Type::Tail ||
+			enMapType == Game_Data::Map_Type::Wall)//æ’å¢™æˆ–åƒæ‰è‡ªèº«ï¼Œæ¸¸æˆç»“æŸ
 		{
 			return true;
 		}
+
 		return false;
 	}
-
+public:
 	static void Wait(long lMillisecond)
 	{
 		Sleep(lMillisecond);
@@ -40,7 +41,7 @@ public:
 
 	static Game_Data::Move_Direct Input(void)
 	{
-		while (_kbhit() != 0)//´æÔÚÒ»¸öÊäÈë
+		while (_kbhit() != 0)//å­˜åœ¨ä¸€ä¸ªè¾“å…¥
 		{
 			switch (_getwch())
 			{
@@ -68,7 +69,7 @@ public:
 					return Game_Data::Move_Direct::Right;
 				}
 				break;
-			case 'p'://ÔİÍ£
+			case 'p'://æš‚åœ
 			case 'P':
 				{
 					int iGet;
@@ -76,7 +77,7 @@ public:
 					{
 						iGet = _getwch();
 					} while (iGet != 'p' && iGet != 'P');
-					Wait(50);//¸ø50ms·´Ó¦Ê±¼ä
+					Wait(50);//ç»™50msååº”æ—¶é—´
 				}
 				continue;
 			default:
@@ -117,110 +118,142 @@ public:
 
 	static void SetIOMode(const Game_Data &csGameData)
 	{
-		//ÉèÖÃ»º³åÇøÎªÈ«»º³å£¬´óĞ¡ÎªµØÍ¼´óĞ¡
+		//è®¾ç½®ç¼“å†²åŒºä¸ºå…¨ç¼“å†²ï¼Œå¤§å°ä¸ºåœ°å›¾å¤§å°
 		setvbuf(stdout, NULL, _IOFBF, (csGameData.GetMapHigh() + 2) * (csGameData.GetMapWidth() + 2) + 1);
-		(void)_setmode(_fileno(stdout), _O_U16TEXT);//ÉèÖÃÊä³ö×Ö·û¼¯
-		(void)_setmode(_fileno(stdin), _O_U16TEXT);//ÉèÖÃÊäÈë×Ö·û¼¯
+		(void)_setmode(_fileno(stdout), _O_U16TEXT);//è®¾ç½®è¾“å‡ºå­—ç¬¦é›†
+		(void)_setmode(_fileno(stdin), _O_U16TEXT);//è®¾ç½®è¾“å…¥å­—ç¬¦é›†
 	}
 
 	static void ChangeDirect(Game_Data &csGameData, Game_Data::Move_Direct enMoveDirect)
 	{
-		//ÅĞ¶ÏÓĞÃ»ÓĞ½øĞĞÒÆ¶¯
+		//åˆ¤æ–­æœ‰æ²¡æœ‰è¿›è¡Œç§»åŠ¨
 		if (enMoveDirect != Game_Data::Move_Direct::No_Move)
 		{
-			//ÅĞ¶Ï¸Ä±äµÄ·½ÏòÊÇ·ñÊÇÉßÉí
-			My_Point stCurrent = csGameData.GetSnakeHead();
-			stCurrent += Game_Data::stSnakeMove[(long)enMoveDirect];
-			if (csGameData.GetMap(stCurrent) == 0 || csGameData.GetMap(stCurrent) + 1 != csGameData.GetSnakeLength())//²»ÊÇÉßÉí
+			if (enMoveDirect != Game_Data::GetNegativeDirection(csGameData.GetHeadDirect()))//ç¦æ­¢åå‘æ‰­å¤´
 			{
-				csGameData.GetMoveDirect() = enMoveDirect;//¸Ä±ä·½Ïò
+				csGameData.GetHeadDirect() = enMoveDirect;//æ”¹å˜æ–¹å‘
 			}
 		}
 	}
 
-	static void ProduceFood(Game_Data &csGameData)//ºóĞøĞŞ¸ÄÉú³ÉÆ÷
+	static void ProduceFood(Game_Data &csGameData)//åç»­ä¿®æ”¹ç”Ÿæˆå™¨
 	{
 		long lFreeSpace = csGameData.GetMapHigh() * csGameData.GetMapWidth() - csGameData.GetSnakeLength();
-		long lProduceNum = min(lFreeSpace, csGameData.GetFoodMaxNum());//»ñÈ¡¿ÕÎ»×îĞ¡ÖµºÍÉú³É´óĞ¡×îĞ¡Öµ
+		long lProduceNum = min(lFreeSpace, csGameData.GetFoodMaxNum());//è·å–ç©ºä½æœ€å°å€¼å’Œç”Ÿæˆå¤§å°æœ€å°å€¼
 
-		if (lProduceNum <= 0)//µØÍ¼Ã»¿Õ¼äÁË
+		if (lProduceNum <= 0)//åœ°å›¾æ²¡ç©ºé—´äº†
 		{
-			return;//Éú³ÉÊ§°Ü
+			return;//ç”Ÿæˆå¤±è´¥
 		}
 
 		My_Point stFood;
 		std::mt19937 &csRandom = csGameData.GetRandom();
-		std::uniform_int_distribution<long> csDistX(0, csGameData.GetMapWidth() - 1);//maxÄÜÈ¡µ½ËùÒÔÒª-1
-		std::uniform_int_distribution<long> csDistY(0, csGameData.GetMapHigh() - 1);//Í¬ÉÏ
+		std::uniform_int_distribution<long> csDistX(0, csGameData.GetMapWidth() - 1);//maxèƒ½å–åˆ°æ‰€ä»¥è¦-1
+		std::uniform_int_distribution<long> csDistY(0, csGameData.GetMapHigh() - 1);//åŒä¸Š
 
-		for (csGameData.GetCurrentFoodNum(); csGameData.GetCurrentFoodNum() < lProduceNum; csGameData.IncCurrentFoodNum())
+		for (csGameData.GetFoodNum(); csGameData.GetFoodNum() < lProduceNum; csGameData.IncFoodNum())
 		{
 			do
 			{
 				stFood.x = csDistX(csRandom);
 				stFood.y = csDistY(csRandom);
-			} while (csGameData.GetMap(stFood) != NULL_BLOCK);//Óöµ½¿ÕµØÎªÖ¹
+			} while (csGameData.GetMap(stFood).enMapType != Game_Data::Map_Type::Blank);//é‡åˆ°ç©ºåœ°ä¸ºæ­¢
 
-			csGameData.GetMap(stFood) = FOOD_BLOCK;
+			csGameData.GetMap(stFood) = Game_Data::Map{Game_Data::Move_Direct::No_Move,Game_Data::Map_Type::Food};
 		}
 	}
 
-	static bool Move(Game_Data &csGameData)
+	static bool Move(Game_Data &csGameData)//ç§»åŠ¨å‡ºè¾¹ç•Œåç¯ç»•
 	{
-		//ÏÈ½«ÉßÍ·Ïòµ±Ç°·½ÏòÒÆ¶¯Ò»¸ñ
-		My_Point stNewSnakeHead = csGameData.GetSnakeHead();
-		stNewSnakeHead += Game_Data::stSnakeMove[(long)csGameData.GetMoveDirect()];
+		//åƒé£Ÿç‰©åˆ¤æ–­
+		bool bEatFood = false;
 
-		//ÅĞ¶ÏÊÇ·ñÊäÁË
-		if (Cross(csGameData, stNewSnakeHead) || csGameData.GetMap(stNewSnakeHead) > NULL_BLOCK)//×²Ç½»ò³Ôµ½×ÔÉí
+		//æ›´æ–°è›‡å¤´
 		{
-			return false;
-		}
+			//ä¿å­˜å½“å‰è›‡å¤´æ–¹å‘
+			Game_Data::Move_Direct enCurrentHeadDirect = csGameData.GetHeadDirect();
 
-		//µİÔöÒÆ¶¯¾àÀë
-		csGameData.IncTravelDistance();
+			//å°†è›‡å¤´å‘å½“å‰æ–¹å‘ç§»åŠ¨ä¸€æ ¼
+			My_Point stNewSnakeHead = csGameData.GetSnakeHead() + Game_Data::stSnakeMove[(long)enCurrentHeadDirect];
+			//è¶Šç•Œç¯ç»•//ç¯ç»•åªéœ€å¤„ç†è›‡å¤´ä¸è›‡å°¾ï¼Œè›‡èº«éƒ¨åˆ†æ— éœ€æ”¹å˜
+			csGameData.Surround(stNewSnakeHead);
 
-		//ÅĞ¶ÏÊÇ·ñ³Ôµ½Ê³Îï
-		if (csGameData.GetMap(stNewSnakeHead) == FOOD_BLOCK)
-		{
-			//µİ¼õÊ³ÎïÊı
-			csGameData.DecCurrentFoodNum();
-			//¸üĞÂĞÂÉßÍ·ÎªÔ­ÏÈÉßÍ·µÄÖµ+1£¬²¢²»ÒÆ¶¯ÉßÎ²
-			csGameData.GetMap(stNewSnakeHead) = csGameData.GetSnakeLength() + 1;
-			//ÉèÖÃĞÂÉßÍ·Î»ÖÃ
+			//åˆ¤æ–­æ˜¯å¦è¾“äº†
+			if (Lose(csGameData, stNewSnakeHead))
+			{
+				return false;
+			}
+
+			//é€’å¢ç§»åŠ¨è·ç¦»
+			csGameData.IncTravelDistance();
+
+			//ä¿®æ”¹åœ°å›¾å‰åˆ¤æ–­æ˜¯å¦åƒåˆ°é£Ÿç‰©
+			if (csGameData.GetMap(stNewSnakeHead).enMapType == Game_Data::Map_Type::Food)
+			{
+				bEatFood = true;
+			}
+
+			//è®¾ç½®åŸå…ˆè›‡å¤´ä½ç½®ä¸‹çš„æ•°æ®ã€ç±»å‹
+			csGameData.GetMap(csGameData.GetSnakeHead()) = Game_Data::Map
+			{
+				enCurrentHeadDirect,
+				Game_Data::Map_Type::Body,//ï¼ˆå¦‚æœåªæœ‰ä¸¤æ ¼çš„æƒ…å†µä¸‹ï¼Œå°¾éƒ¨ä¼šå°†æ­¤èº«ä½“ä¿®æ”¹ä¸ºå°¾éƒ¨ï¼Œå¦‚æœåƒåˆ°é£Ÿç‰©åˆ™æ­¤èº«ä½“ä¸ç”¨æ”¹å˜ï¼‰
+			};
+
+			//è®¾ç½®æ–°è›‡å¤´ä½ç½®ä¸‹çš„æ•°æ®ã€ç±»å‹
+			csGameData.GetMap(stNewSnakeHead) = Game_Data::Map
+			{
+				enCurrentHeadDirect,
+				Game_Data::Map_Type::Head,
+			};
+
+			//è®¾ç½®æ–°è›‡å¤´ä½ç½®
 			csGameData.GetSnakeHead() = stNewSnakeHead;
-			//Éú³ÉĞÂµÄÊ³Îï
-			if (!csGameData.GetEatAllToProduce() || csGameData.GetCurrentFoodNum() == 0)
-			{//Èç¹û²»ÊÇ³ÔÍêÈ«²¿ÔÙÉú³ÉÄÇÃ´Ö±½ÓÉú³É£¬·ñÔòÅĞ¶Ïµ±Ç°Ê³ÎïÊıÊÇ·ñÎª0£¨¶ÌÂ·ÇóÖµÌØĞÔ£¬×ó±ßÎªfalse²Å²âÊÔÓÒ²àÖµ£©
+		}
+		
+
+		//åƒåˆ°é£Ÿç‰©çš„å¤„ç†
+		if (bEatFood)
+		{
+			//é€’å¢è›‡é•¿åº¦
+			csGameData.IncSnakeLength();
+			//é€’å‡é£Ÿç‰©æ•°
+			csGameData.DecFoodNum();
+
+			//ç”Ÿæˆæ–°çš„é£Ÿç‰©
+			if (!csGameData.GetEatAllToProduce() || csGameData.GetFoodNum() == 0)
+			{//å¦‚æœä¸æ˜¯åƒå®Œå…¨éƒ¨å†ç”Ÿæˆé‚£ä¹ˆç›´æ¥ç”Ÿæˆï¼Œå¦åˆ™åˆ¤æ–­å½“å‰é£Ÿç‰©æ•°æ˜¯å¦ä¸º0ï¼ˆçŸ­è·¯æ±‚å€¼ç‰¹æ€§ï¼Œå·¦è¾¹ä¸ºfalseæ‰æµ‹è¯•å³ä¾§å€¼ï¼‰
 				ProduceFood(csGameData);
 			}
+
+			//ä¸ç§»åŠ¨è›‡å°¾
 			return true;
 		}
 
-		//¸üĞÂĞÂÉßÍ·ÎªÔ­ÏÈÉßÍ·µÄÖµ
-		csGameData.GetMap(stNewSnakeHead) = csGameData.GetSnakeLength();
-		//ÉèÖÃĞÂÉßÍ·Î»ÖÃ
-		csGameData.GetSnakeHead() = stNewSnakeHead;
-
-		//¸üĞÂÉßÉíÓëÉßÎ²
-		My_Point stCurrent = stNewSnakeHead;//ºóĞø´ËÖµÎªÉßÎ²×ø±ê
-		while (csGameData.GetMap(stCurrent) != NULL_BLOCK)
+		//æ›´æ–°è›‡å°¾
 		{
-			//²é¿´ËÄ¸ö·½ÏòÉÏÓë×ÔÉíÖµÏàÍ¬µÄÖµ
-			for (long j = (long)Game_Data::Move_Direct::Arr_Beg; j < (long)Game_Data::Move_Direct::Arr_End; ++j)
+			//ä¿å­˜å½“å‰è›‡å°¾æ–¹å‘
+			Game_Data::Move_Direct enCurrentTailDirect = csGameData.GetTailDirect();
+
+			//å°†è›‡å°¾å‘å½“å‰æ–¹å‘ç§»åŠ¨ä¸€æ ¼
+			My_Point stNewSnakeTail = csGameData.GetSnakeTail() + Game_Data::stSnakeMove[(long)enCurrentTailDirect];
+			//è¶Šç•Œç¯ç»•
+			csGameData.Surround(stNewSnakeTail);
+
+			//æ¸…é™¤åŸå…ˆè›‡å°¾ä½ç½®ä¸‹çš„æ•°æ®ã€ç±»å‹
+			csGameData.GetMap(csGameData.GetSnakeTail()) = Game_Data::Map
 			{
-				My_Point stMove = stCurrent;
-				stMove += Game_Data::stSnakeMove[j];//ÒÆ¶¯
+				Game_Data::Move_Direct::No_Move,
+				Game_Data::Map_Type::Blank,
+			};
 
-				if (!Cross(csGameData, stMove) && csGameData.GetMap(stMove) == csGameData.GetMap(stCurrent))//ÏàÍ¬
-				{
-					--csGameData.GetMap(stMove);//µİ¼õ
-					stCurrent = stMove;//ÒÆ¶¯
-					break;//´¦ÀíÏÂÒ»¸öÎ»ÖÃ
-				}
-			}
+			//è®¾ç½®æ–°è›‡å°¾ä½ç½®ä¸‹çš„ç±»å‹ï¼Œæ•°æ®ä¸å˜
+			csGameData.GetMap(stNewSnakeTail).enMapType = Game_Data::Map_Type::Tail;
+
+			//è®¾ç½®æ–°è›‡å°¾ä½ç½®
+			csGameData.GetSnakeTail() = stNewSnakeTail;
 		}
-
+		
 		return true;
 	}
 };

@@ -1,71 +1,108 @@
-#pragma once
+﻿#pragma once
 
 #include "My_Point.hpp"
-#include "Game_Sign.hpp"
 
 #include <stdlib.h>
 #include <utility>
 #include <stdexcept>
 #include <random>
+#include <algorithm>
 
 class Game_Data
 {
 public:
-	enum class Move_Direct :long
+	enum class Move_Direct :unsigned short
 	{
-		Arr_Beg = 0, 
-		Up = Arr_Beg,
+		Beg = 0,
+		No_Move = Beg,
+		Up,
 		Down,
 		Left,
 		Right,
-		Arr_End,
-		No_Move = Arr_End,
+		End,
 	};
 
-	static constexpr My_Point stSnakeMove[(long)Game_Data::Move_Direct::Arr_End] =//�ƶ�����
+	static Move_Direct GetNegativeDirection(Move_Direct enMoveDirect)
 	{
+		static constexpr const Move_Direct NegativeDirection[(long)Move_Direct::End] =
+		{
+			Move_Direct::No_Move,
+			Move_Direct::Down,
+			Move_Direct::Up,
+			Move_Direct::Right,
+			Move_Direct::Left,
+		};
+
+		return NegativeDirection[(long)enMoveDirect];
+	}
+
+	enum class Map_Type :unsigned short//修改此处顺序记得修改所有使用其的函数
+	{
+		Beg = 0,
+		Blank = Beg,//空白
+		Head,//头
+		Body,//身
+		Tail,//尾
+		Wall,//墙壁
+		Food,//食物
+		End,
+	};
+
+	static constexpr My_Point stSnakeMove[(long)Game_Data::Move_Direct::End] =//移动方向
+	{
+		{ 0, 0},
 		{ 0,-1},
 		{ 0, 1},
 		{-1, 0},
 		{ 1, 0},
 	};
+
+	struct Map
+	{
+		Move_Direct enMoveDirect = Move_Direct::No_Move;
+		Map_Type enMapType = Map_Type::Blank;
+	};
 private:
 	long lMapWidth;//x
 	long lMapHigh;//y
-	long *lMap;//��ͼ
+	Map *stArrMap;//地图,高4字节存储蛇部位信息，低4字节存储部位指向信息
 
-	long lMoveInterval;//�ƶ����
-	long lWinLength;//��ʤ����
-	long lFoodMaxNum;//��ͼ�������ֵ�ʳ�����
-	long lCurrentFoodNum;//��ͼ�е�ǰ��ʳ�����
-	long lTravelDistance;//�ƶ�����
+	long lMoveInterval;//移动间隔
+	long lWinLength;//获胜长度
+	long lSnakeLength;//蛇当前长度
+	long lFoodMaxNum;//地图中最多出现的食物个数
+	long lFoodNum;//地图中当前的食物个数
+	long lTravelDistance;//移动距离
 
-	My_Point stSnakeHead;//ͷ����
-	Move_Direct enMoveDirect;//�ƶ�����
-	std::mt19937 csRandom;//�����������
+	My_Point stSnakeHead;//头坐标
+	My_Point stSnakeTail;//尾坐标
+	//Move_Direct enHeadDirect;//头方向
+	std::mt19937 csRandom;//随机数生成器
 
-	bool bEatAllToProduce;//ʳ�����ɲ��ԣ��Ե�����ʳ������/�Ե�һ������һ��
+	bool bEatAllToProduce;//食物生成策略：吃掉所有食物生成/吃掉一个生成一个
 public:
 	Game_Data(long _lMapWidth, long _lMapHigh, long _lMoveInterval, long _lWinLength = -1, long _lFoodMaxNum = 1, unsigned int _uiRandomSeed = 0, bool _bEatAllToProduce = true) :
 		lMapWidth		(_lMapWidth), 
 		lMapHigh		(_lMapHigh), 
 		lMoveInterval	(_lMoveInterval),
 		lWinLength		(_lWinLength),
+		lSnakeLength	(0),
 		lFoodMaxNum		(_lFoodMaxNum),
-		lCurrentFoodNum	(0),
+		lFoodNum		(0),
 		lTravelDistance	(0),
-		stSnakeHead		({0,0}), 
-		enMoveDirect	(Move_Direct::Right),
+		stSnakeHead		({1,0}),
+		stSnakeTail		({0,0}),
+		//enHeadDirect	(Move_Direct::Right),
 		csRandom		(_uiRandomSeed),
 		bEatAllToProduce(_bEatAllToProduce)
 	{
 		if (lMapWidth <= 0 || lMapHigh <= 0)
 		{
-			throw std::invalid_argument("����ĵ�ͼ��С");
+			throw std::invalid_argument("错误的地图大小");
 		}
 		if (lMoveInterval < 0)
 		{
-			throw std::invalid_argument("�����ʱ����");
+			throw std::invalid_argument("错误的时间间隔");
 		}
 		if (lWinLength < 0)
 		{
@@ -75,48 +112,52 @@ public:
 			}
 			else
 			{
-				throw std::invalid_argument("����Ļ�ʤ����");
+				throw std::invalid_argument("错误的获胜长度");
 			}
 		}
 		if (lFoodMaxNum < 0)
 		{
-			throw std::invalid_argument("��������ʳ����");
+			throw std::invalid_argument("错误的最大食物数");
 		}
 
-		lMap = new long[lMapWidth * lMapHigh];
+		stArrMap = new Map[lMapWidth * lMapHigh];
 	}
 
 	~Game_Data(void)
 	{
-		delete[] lMap;
-		lMap = NULL;
+		delete[] stArrMap;
+		stArrMap = NULL;
 	}
 
 	Game_Data(Game_Data &&_Move) noexcept :
 		lMapWidth		(_Move.lMapWidth),
 		lMapHigh		(_Move.lMapHigh),
-		lMap			(_Move.lMap),
+		stArrMap		(_Move.stArrMap),
 		lMoveInterval	(_Move.lMoveInterval),
 		lWinLength		(_Move.lWinLength),
+		lSnakeLength	(_Move.lSnakeLength),
 		lFoodMaxNum		(_Move.lFoodMaxNum),
-		lCurrentFoodNum	(_Move.lCurrentFoodNum),
+		lFoodNum		(_Move.lFoodNum),
 		lTravelDistance	(_Move.lTravelDistance),
 		stSnakeHead		(std::move(_Move.stSnakeHead)),
-		enMoveDirect	(_Move.enMoveDirect),
+		stSnakeTail		(std::move(_Move.stSnakeTail)),
+		//enHeadDirect	(_Move.enHeadDirect),
 		csRandom		(std::move(_Move.csRandom)),
 		bEatAllToProduce(_Move.bEatAllToProduce)
 	{
 		_Move.lMapWidth = 0;
 		_Move.lMapHigh = 0;
-		_Move.lMap = NULL;
+		_Move.stArrMap = NULL;
 		_Move.lMoveInterval = 0;
 		_Move.lWinLength = 0;
+		_Move.lSnakeLength = 0;
 		_Move.lFoodMaxNum = 0;
-		_Move.lCurrentFoodNum = 0;
+		_Move.lFoodNum = 0;
 		_Move.lTravelDistance = 0;
-		//_Move.stSnakeHead ͨ��std::move����������
-		_Move.enMoveDirect = Move_Direct::No_Move;
-		//_Move.csRandom ͨ��std::move����������
+		//_Move.stSnakeHead 通过std::move，无需重置
+		//_Move.stSnakeTail 通过std::move，无需重置
+		//_Move.enHeadDirect = Move_Direct::No_Move;
+		//_Move.csRandom 通过std::move，无需重置
 		_Move.bEatAllToProduce = false;
 	}
 
@@ -124,18 +165,87 @@ public:
 	{
 		if (_lMapWidth <= 0 || _lMapHigh <= 0)
 		{
-			throw std::invalid_argument("����ĵ�ͼ��С");
+			throw std::invalid_argument("错误的地图大小");
 		}
 
-		long *lNewMap = new long[_lMapWidth * _lMapHigh];
-		delete[] lMap;
-		lMap = lNewMap;
+		Map *ulArrNewMap = new Map[_lMapWidth * _lMapHigh];
+		delete[] stArrMap;
+		stArrMap = ulArrNewMap;
 		lMapWidth = _lMapWidth, lMapHigh = _lMapHigh;
 	}
 
 	void ResetMap(void)
 	{
-		memset(lMap, 0, lMapWidth * lMapHigh * sizeof(long));
+		memset(stArrMap, 0, lMapWidth * lMapHigh * sizeof(Map));
+	}
+
+	bool CrossMap(const My_Point &stPoint)//越界判断
+	{
+		//越界
+		if (stPoint.x >= lMapWidth ||
+			stPoint.y >= lMapHigh ||
+			stPoint.x < 0 ||
+			stPoint.y < 0)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	void Surround(My_Point &stPoint)//越界环绕
+	{
+		if (CrossMap(stPoint))
+		{
+			stPoint.x += lMapWidth;//发生负数环绕时转变为正数
+			stPoint.x %= lMapWidth;//发生正数环绕时求模，上面加法只改变除法结果，不改变余数
+
+			stPoint.y += lMapHigh;//对y的处理同上对x的处理
+			stPoint.y %= lMapHigh;
+		}
+	}
+
+	void ResetSnake(My_Point stSnakeHeadBegin, Move_Direct enMoveDirectBegin) 
+	{
+		//设置成员
+		stSnakeHead = stSnakeHeadBegin;
+		//enHeadDirect = enMoveDirectBegin;
+
+		//判断是否越界，越界则放入最靠近越界点的地图边界内
+		if (CrossMap(stSnakeHead))
+		{
+			stSnakeHead.x = std::max<long>(0, stSnakeHead.x);
+			stSnakeHead.y = std::max<long>(0, stSnakeHead.y);
+
+			stSnakeHead.x = std::min<long>(stSnakeHead.x, lMapWidth - 1);
+			stSnakeHead.y = std::min<long>(stSnakeHead.y, lMapHigh - 1);
+		}
+		
+		//计算尾坐标在头部方向的反方向
+		stSnakeTail = stSnakeHead + stSnakeMove[(long)GetNegativeDirection(enMoveDirectBegin)];
+
+		//判断是否越界
+		if (CrossMap(stSnakeTail))
+		{
+			//处理尾部越界问题
+			stSnakeHead += stSnakeMove[(long)enMoveDirectBegin];
+			stSnakeTail += stSnakeMove[(long)enMoveDirectBegin];
+			/*
+			原理：首先蛇头保证不越界，其次蛇尾在蛇头朝向的反方向一格处，
+			若蛇尾越界，则代表蛇尾刚好在边界上，那么整条蛇向着当前方向移动一格
+			就能使蛇尾移出边界（注：地图大小至少为2*2，移动不会使蛇头越界）
+			上		下
+			∩		∧
+			∨		∪
+
+			左		右
+			⊂＞		＜⊃
+			*/
+		}
+
+		//设置蛇头指向移动方向
+		GetMap(stSnakeHead) = Map{enMoveDirectBegin,Map_Type::Head};
+		//设置蛇尾指向蛇头
+		GetMap(stSnakeTail) = Map{enMoveDirectBegin,Map_Type::Tail};
 	}
 
 	long &GetMoveInterval(void)
@@ -168,39 +278,39 @@ public:
 		return lFoodMaxNum;
 	}
 
-	long &IncCurrentFoodNum(void)
+	void IncFoodNum(void)
 	{
-		return ++lCurrentFoodNum;
+		++lFoodNum;
 	}
 
-	long &DecCurrentFoodNum(void)
+	void DecFoodNum(void)
 	{
-		return --lCurrentFoodNum;
+		--lFoodNum;
 	}
 
-	long &ResetCurrentFoodNum(void)
+	void ResetFoodNum(void)
 	{
-		return lCurrentFoodNum = 0;
+		lFoodNum = 0;
 	}
 
-	long &GetCurrentFoodNum(void)
+	long &GetFoodNum(void)
 	{
-		return lCurrentFoodNum;
+		return lFoodNum;
 	}
 
-	const long &GetCurrentFoodNum(void) const
+	const long &GetFoodNum(void) const
 	{
-		return lCurrentFoodNum;
+		return lFoodNum;
 	}
 
-	long &IncTravelDistance(void)
+	void IncTravelDistance(void)
 	{
-		return ++lTravelDistance;
+		++lTravelDistance;
 	}
 
-	long &ResetTravelDistance(void)
+	void ResetTravelDistance(void)
 	{
-		return lTravelDistance = 0;
+		lTravelDistance = 0;
 	}
 
 	long &GetTravelDistance(void)
@@ -213,9 +323,24 @@ public:
 		return lTravelDistance;
 	}
 
-	long GetSnakeLength(void) const
+	void IncSnakeLength(void)
 	{
-		return GetMap(stSnakeHead);//��ͷ��ָ��Ϊ�߳���
+		++lSnakeLength;
+	}
+
+	void ResetSnakeLenght(void)
+	{
+		lSnakeLength = 0;
+	}
+
+	long &GetSnakeLength(void)
+	{
+		return lSnakeLength;
+	}
+
+	const long &GetSnakeLength(void) const
+	{
+		return lSnakeLength;
 	}
 
 	My_Point &GetSnakeHead(void)
@@ -228,14 +353,29 @@ public:
 		return stSnakeHead;
 	}
 
-	Move_Direct &GetMoveDirect(void)
+	My_Point &GetSnakeTail(void)
 	{
-		return enMoveDirect;
+		return stSnakeTail;
 	}
 
-	const Move_Direct &GetMoveDirect(void) const
+	const My_Point &GetSnakeTail(void) const
 	{
-		return enMoveDirect;
+		return stSnakeTail;
+	}
+
+	Move_Direct &GetHeadDirect(void)//蛇头方向可以主动修改
+	{
+		return GetMap(GetSnakeHead()).enMoveDirect;
+	}
+
+	const Move_Direct &GetHeadDirect(void) const
+	{
+		return GetMap(GetSnakeHead()).enMoveDirect;
+	}
+
+	const Move_Direct &GetTailDirect(void) const//蛇尾方向不可主动修改
+	{
+		return GetMap(GetSnakeTail()).enMoveDirect;
 	}
 
 	std::mt19937 &GetRandom(void)
@@ -263,16 +403,26 @@ public:
 		return bEatAllToProduce;
 	}
 
-	long &GetMap(const My_Point &stPoint)
+	Map &GetMap(long x, long y)
 	{
-		return lMap[stPoint.y * lMapWidth + stPoint.x];
+		return stArrMap[y * lMapWidth + x];
 	}
 
-	const long &GetMap(const My_Point &stPoint) const
+	const Map &GetMap(long x, long y)const
 	{
-		return lMap[stPoint.y * lMapWidth + stPoint.x];
+		return stArrMap[y * lMapWidth + x];
 	}
 
+	Map &GetMap(const My_Point &stPoint)
+	{
+		return GetMap(stPoint.x, stPoint.y);
+	}
+
+	const Map &GetMap(const My_Point &stPoint) const
+	{
+		return GetMap(stPoint.x, stPoint.y);
+	}
+	
 	long GetMapWidth(void) const
 	{
 		return lMapWidth;

@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "Game_Data.hpp"
-#include "Game_Sign.hpp"
 
 #include <stdio.h>
 #include <Windows.h>
@@ -11,53 +10,62 @@ class Game_Draw
 {
 private:
 	//绘制
-	static void BorderBlock(void)//绘制边界
-	{
-		fputws(L"■", stdout);
-	}
-
-	static void NullBlock(void)//绘制空地
+	static void BlankBlock(Game_Data::Move_Direct)//绘制空地
 	{
 		fputws(L"  ", stdout);
 	}
 
-	static void FoodBlock(void)//绘制食物
+	static void HeadBlock(Game_Data::Move_Direct enMoveDirect)//绘制蛇头
 	{
-		fputws(L"◇", stdout);
-	}
-
-	static void SnakeHead(Game_Data::Move_Direct enMoveDirect)//绘制蛇头
-	{
-		//fputws(L"○", stdout);
-		static constexpr const wchar_t *pSnakeHeadArr[(long)Game_Data::Move_Direct::Arr_End + 1] = 
+		static constexpr const wchar_t *pSnakeHeadArr[(long)Game_Data::Move_Direct::End] = 
 		{
+			L"○",
 			L"∩",
 			L"∪",
 			L"⊂",
 			L"⊃",
-			L"○",
 		};
 		fputws(pSnakeHeadArr[(long)enMoveDirect], stdout);
 	}
 
-	static void SnakeBody(void)//绘制蛇身
+	static void BodyBlock(Game_Data::Move_Direct)//绘制蛇身
 	{
 		fputws(L"□", stdout);
 	}
 
-	static void SnakeTail(Game_Data::Move_Direct enMoveDirect)//绘制蛇尾
+	static void TailBlock(Game_Data::Move_Direct enMoveDirect)//绘制蛇尾
 	{
-		//fputws(L"□", stdout);
-		static constexpr const wchar_t *pSnakeTailArr[(long)Game_Data::Move_Direct::Arr_End + 1] =//注意此处上下 左右分别相反
+		static constexpr const wchar_t *pSnakeTailArr[(long)Game_Data::Move_Direct::End] =//注意此处上下 左右分别相反
 		{
+			L"□",
 			L"∨",
 			L"∧",
 			L"＞",
 			L"＜",
-			L"□",
 		};
 		fputws(pSnakeTailArr[(long)enMoveDirect], stdout);
 	}
+
+	static void WallBlock(Game_Data::Move_Direct)//绘制墙壁
+	{
+		fputws(L"■", stdout);
+	}
+
+	static void FoodBlock(Game_Data::Move_Direct)//绘制食物
+	{
+		fputws(L"◇", stdout);
+	}
+
+	typedef void (*DrawFunc)(Game_Data::Move_Direct);
+	static constexpr const DrawFunc fcDrawFunc[(long)Game_Data::Map_Type::End] =
+	{
+		BlankBlock,
+		HeadBlock,
+		BodyBlock,
+		TailBlock,
+		WallBlock,
+		FoodBlock,
+	};
 
 	static void RewindOutput(void)//回到开头
 	{
@@ -79,16 +87,6 @@ private:
 	{
 		fflush(stdout);
 	}
-
-	static void LineBorderBlock(const Game_Data &csGameData)//绘制行边界
-	{
-		for (long x = 0; x < csGameData.GetMapWidth() + 2; ++x)//+2是因为左侧和右侧各有1格边界
-		{
-			BorderBlock();
-		}
-		NewLine();
-	}
-
 public:
 	static void Start(void)
 	{
@@ -102,59 +100,17 @@ public:
 		HideCursor();
 		RewindOutput();
 
-		//绘制上边界
-		LineBorderBlock(csGameData);
-
 		for (long y = 0; y < csGameData.GetMapHigh(); ++y)
 		{
-			BorderBlock();//绘制左边界
 			for (long x = 0; x < csGameData.GetMapWidth(); ++x)
 			{
-				long lCurrent = csGameData.GetMap({x,y});
-
-				if (lCurrent == NULL_BLOCK)
-				{
-					NullBlock();
-				}
-				else if (lCurrent == csGameData.GetSnakeLength())//如果蛇只有1格，头和尾是相同的，但是头部优先绘制
-				{
-					SnakeHead(csGameData.GetMoveDirect());
-					//SnakeHead(Game_Data::Move_Direct::Arr_End);
-				}
-				else if (lCurrent == SNAKE_TAIL)
-				{
-					//如果没找到则按身体形式输出
-					Game_Data::Move_Direct enMoveDirect = Game_Data::Move_Direct::Arr_End;
-					//查看四个方向上比自身大1的值
-					for (long i = (long)Game_Data::Move_Direct::Arr_Beg; i < (long)Game_Data::Move_Direct::Arr_End; ++i)
-					{
-						My_Point stCurrent = {x,y}, stMove = stCurrent;
-						stMove += Game_Data::stSnakeMove[i];//移动
-
-						if (!Game_Control::Cross(csGameData, stMove) && csGameData.GetMap(stMove) == csGameData.GetMap(stCurrent) + 1)//比自身大1
-						{
-							enMoveDirect = (Game_Data::Move_Direct)i;
-							break;//找到了
-						}
-					}
-
-					SnakeTail(enMoveDirect);
-				}
-				else if (lCurrent == FOOD_BLOCK)
-				{
-					FoodBlock();
-				}
-				else//蛇身
-				{
-					SnakeBody();
-				}
+				//获取当前位置地图信息
+				const auto &[enMoveDirect, enMapType] = csGameData.GetMap({x,y});
+				//调用绘制函数
+				fcDrawFunc[(long)enMapType](enMoveDirect);
 			}
-			BorderBlock();//绘制右边界
 			NewLine();//到下一行绘制
 		}
-
-		//绘制下边界
-		LineBorderBlock(csGameData);
 
 		//刷新
 		Flush();

@@ -2,13 +2,38 @@
 
 struct My_Point
 {
-	long x, y;
-
 public:
-	My_Point &operator+=(const My_Point &_Other)
+	long x, y;
+public:
+	My_Point &operator+=(const My_Point &_Right)
 	{
-		x += _Other.x;
-		y += _Other.y;
+		x += _Right.x;
+		y += _Right.y;
 		return *this;
+	}
+
+	My_Point &operator-=(const My_Point &_Right)
+	{
+		x -= _Right.x;
+		y -= _Right.y;
+		return *this;
+	}
+
+	My_Point operator+(const My_Point &_Right) const
+	{
+		return My_Point
+		{
+			x + _Right.x,
+			y + _Right.y,
+		};
+	}
+
+	My_Point operator-(const My_Point &_Right) const
+	{
+		return My_Point
+		{
+			x - _Right.x,
+			y - _Right.y,
+		};
 	}
 };

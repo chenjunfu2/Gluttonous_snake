@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include "Game_Control.hpp"
 #include "Game_Draw.hpp"
@@ -14,18 +14,18 @@ private:
 private:
 	void Reset(void)
 	{
-		csGameData.ResetMap();//ÖØÖÃµØÍ¼Êı¾İ
-		csGameData.ResetTravelDistance();//ÖØÖÃÒÆ¶¯¾àÀë
-		csGameData.ResetCurrentFoodNum();//ÖØÖÃµ±Ç°Ê³ÎïÊı
-		csGameData.GetSnakeHead() = stSnakeHeadBegin;//³õÊ¼»¯ÉßÎ»ÖÃ
-		csGameData.GetMoveDirect() = enMoveDirectBegin;//³õÊ¼»¯Éß·½Ïò
-		csGameData.GetMap(csGameData.GetSnakeHead()) = SNAKE_TAIL;//³õÊ¼»¯µØÍ¼ÖĞÉßÍ·Î»ÖÃµÄÖµ
+		csGameData.ResetMap();//é‡ç½®åœ°å›¾æ•°æ®
+		csGameData.ResetSnakeLenght();//é‡ç½®è›‡é•¿åº¦
+		csGameData.ResetFoodNum();//é‡ç½®å½“å‰é£Ÿç‰©æ•°
+		csGameData.ResetTravelDistance();//é‡ç½®ç§»åŠ¨è·ç¦»
+
+		csGameData.ResetSnake(stSnakeHeadBegin, enMoveDirectBegin);//åˆå§‹åŒ–è›‡
 	}
 public:
 	Game_Play(Game_Data &&_csSnakeData, const My_Point &_stSnakeHeadBegin = {0,0}, Game_Data::Move_Direct _enMoveDirectBegin = Game_Data::Move_Direct::Right) :
 		csGameData(std::move(_csSnakeData)), stSnakeHeadBegin(_stSnakeHeadBegin), enMoveDirectBegin(_enMoveDirectBegin)
 	{
-		//ÉèÖÃIOÄ£Ê½
+		//è®¾ç½®IOæ¨¡å¼
 		Game_Control::SetIOMode(csGameData);
 	}
 
@@ -38,14 +38,14 @@ public:
 
 	void Init(void)
 	{
-		Game_Draw::Clear();//ÇåÆÁ
-		Game_Draw::Start();//Êä³ö¿ªÊ¼ĞÅÏ¢
-		Game_Control::GetAnyKey();//°´ÈÎÒâ¼ü¼ÌĞø
-		Game_Draw::Clear();//ÇåÆÁ
+		Game_Draw::Clear();//æ¸…å±
+		Game_Draw::Start();//è¾“å‡ºå¼€å§‹ä¿¡æ¯
+		Game_Control::GetAnyKey();//æŒ‰ä»»æ„é”®ç»§ç»­
+		Game_Draw::Clear();//æ¸…å±
 		
-		//ÖØÖÃÊı¾İ
+		//é‡ç½®æ•°æ®
 		Reset();
-		//³õÊ¼»¯Ê³Îï
+		//åˆå§‹åŒ–é£Ÿç‰©
 		Game_Control::ProduceFood(csGameData);
 	}
 
@@ -71,6 +71,11 @@ public:
 
 	bool Loop(void)
 	{
+		//æ˜¾ç¤ºç•Œé¢
+		Game_Draw::Interface(csGameData);
+		Game_Draw::Info(csGameData);
+
+		//æ¸¸æˆå¾ªç¯
 		while (true)
 		{
 			Game_Control::Wait(csGameData.GetMoveInterval());
@@ -84,7 +89,8 @@ public:
 				Game_Draw::Lose();
 				break;
 			}
-			else if (Game_Control::Win(csGameData))
+
+			if (Game_Control::Win(csGameData))
 			{
 				Game_Draw::Win();
 				break;
