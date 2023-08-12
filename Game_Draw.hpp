@@ -105,7 +105,7 @@ public:
 			for (long x = 0; x < csGameData.GetMapWidth(); ++x)
 			{
 				//获取当前位置地图信息
-				const auto &[enMoveDirect, enMapType] = csGameData.GetMap({x,y});
+				const auto &[enMoveDirect, enMapType] = csGameData.GetMap(x, y);
 				//调用绘制函数
 				fcDrawFunc[(long)enMapType](enMoveDirect);
 			}
