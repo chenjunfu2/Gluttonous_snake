@@ -100,7 +100,7 @@ int wmain(int argc, wchar_t *argv[])
 		{0,LONG_MAX},//food_max_num
 		{0,LONG_MAX},//win_length 小于0则填满整个地图获胜
 
-		{0,-2},//random_seed 0到-2意为着不等于-1
+		{LONG_MIN,LONG_MAX},//random_seed
 		{0,1},//food_produce true or false
 	};
 
