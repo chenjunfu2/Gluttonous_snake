@@ -246,6 +246,8 @@ public:
 		GetMap(stSnakeHead) = Map{enMoveDirectBegin,Map_Type::Head};
 		//设置蛇尾指向蛇头
 		GetMap(stSnakeTail) = Map{enMoveDirectBegin,Map_Type::Tail};
+		//设置蛇长度
+		lSnakeLength = 2;//头+尾=2
 	}
 
 	long &GetMoveInterval(void)

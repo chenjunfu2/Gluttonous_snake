@@ -76,10 +76,21 @@ public:
 		Game_Draw::Info(csGameData);
 
 		//游戏循环
+		long lAddSpeedCount = 0;
+		Game_Control::CgDir_Status enCgDirStatus = Game_Control::CgDir_Status::No_Change;
 		while (true)
 		{
-			Game_Control::Wait(csGameData.GetMoveInterval());
-			Game_Control::ChangeDirect(csGameData, Game_Control::Input());
+			//加速判断，Todo：k与n由csGameData内数据指定，后续修改
+			//if (lAddSpeedCount >= k)//持续按住至少k次循环
+			//{
+			//	Game_Control::Wait(csGameData.GetMoveInterval() / n);//n倍加速
+			//}
+			//else
+			//{
+				Game_Control::Wait(csGameData.GetMoveInterval());
+			//}
+			
+			enCgDirStatus = Game_Control::ChangeDirect(csGameData, Game_Control::Input());
 			bool bLose = !Game_Control::Move(csGameData);
 			Game_Draw::Interface(csGameData);
 			Game_Draw::Info(csGameData);
@@ -89,12 +100,24 @@ public:
 				Game_Draw::Lose();
 				break;
 			}
-
 			if (Game_Control::Win(csGameData))
 			{
 				Game_Draw::Win();
 				break;
 			}
+
+			//加速判断
+			//if (enCgDirStatus == Game_Control::CgDir_Status::Add_Speed)
+			//{
+			//	if (lAddSpeedCount < k)
+			//	{
+			//		++lAddSpeedCount;
+			//	}
+			//}
+			//else
+			//{
+			//	lAddSpeedCount = 0;
+			//}
 		}
 
 		Game_Draw::End(L"N", L"L");

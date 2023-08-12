@@ -124,16 +124,36 @@ public:
 		(void)_setmode(_fileno(stdin), _O_U16TEXT);//设置输入字符集
 	}
 
-	static void ChangeDirect(Game_Data &csGameData, Game_Data::Move_Direct enMoveDirect)
+
+	enum class CgDir_Status :long
+	{
+		No_Change,
+		Change,
+		Add_Speed,
+	};
+
+	static CgDir_Status ChangeDirect(Game_Data &csGameData, Game_Data::Move_Direct enMoveDirect)//返回0：没有移动 返回1：成功移动 返回2：加速移动
 	{
 		//判断有没有进行移动
-		if (enMoveDirect != Game_Data::Move_Direct::No_Move)
+		if (enMoveDirect == Game_Data::Move_Direct::No_Move)
 		{
-			if (enMoveDirect != Game_Data::GetNegativeDirection(csGameData.GetHeadDirect()))//禁止反向扭头
-			{
-				csGameData.GetHeadDirect() = enMoveDirect;//改变方向
-			}
+			return CgDir_Status::No_Change;
 		}
+
+		//禁止反向扭头
+		if (enMoveDirect == Game_Data::GetNegativeDirection(csGameData.GetHeadDirect()))
+		{
+			return CgDir_Status::No_Change;
+		}
+
+		//判断是否加速移动
+		if (enMoveDirect == csGameData.GetHeadDirect())
+		{
+			return CgDir_Status::Add_Speed;//加速移动
+		}
+		
+		csGameData.GetHeadDirect() = enMoveDirect;//改变方向
+		return CgDir_Status::Change;
 	}
 
 	static void ProduceFood(Game_Data &csGameData)//后续修改生成器
