@@ -2,6 +2,7 @@
 
 #include "Game_Control.hpp"
 #include "Game_Draw.hpp"
+#include "Game_Input.hpp"
 
 #include <random>
 
@@ -25,11 +26,16 @@ public:
 	Game_Play(Game_Data &&_csSnakeData, const My_Point &_stSnakeHeadBegin = {0,0}, Game_Data::Move_Direct _enMoveDirectBegin = Game_Data::Move_Direct::Right) :
 		csGameData(std::move(_csSnakeData)), stSnakeHeadBegin(_stSnakeHeadBegin), enMoveDirectBegin(_enMoveDirectBegin)
 	{
-		//设置IO模式
-		Game_Control::SetIOMode(csGameData);
+		SetOutputBuffer(csGameData);
 	}
 
 	~Game_Play(void) = default;
+
+	static void SetOutputBuffer(const Game_Data &csGameData)
+	{
+		//设置缓冲区为全缓冲，大小为地图大小
+		setvbuf(stdout, NULL, _IOFBF, (csGameData.GetMapHigh() + 2) * (csGameData.GetMapWidth() + 2) + 1);
+	}
 
 	const Game_Data &GetSnakeData(void) const
 	{
@@ -40,7 +46,7 @@ public:
 	{
 		Game_Draw::Clear();//清屏
 		Game_Draw::Start();//输出开始信息
-		Game_Control::GetAnyKey();//按任意键继续
+		Game_Input::GetAnyKey();//按任意键继续
 		Game_Draw::Clear();//清屏
 		
 		//重置数据
@@ -90,7 +96,7 @@ public:
 				Game_Control::Wait(csGameData.GetMoveInterval());
 			//}
 			
-			enCgDirStatus = Game_Control::ChangeDirect(csGameData, Game_Control::Input());
+			enCgDirStatus = Game_Control::ChangeDirect(csGameData, Game_Input::Input());
 			bool bLose = !Game_Control::Move(csGameData);
 			Game_Draw::Interface(csGameData);
 			Game_Draw::Info(csGameData);
@@ -121,6 +127,6 @@ public:
 		}
 
 		Game_Draw::End(L"N", L"L");
-		return Game_Control::SwitchInput(L"Nn", 2, L"Ll", 2);
+		return Game_Input::SwitchInput(L"Nn", 2, L"Ll", 2);
 	}
 };

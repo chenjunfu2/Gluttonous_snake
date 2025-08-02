@@ -4,8 +4,6 @@
 
 #include <conio.h>
 #include <Windows.h>
-#include <io.h>
-#include <fcntl.h>
 #include <wchar.h>
 
 class Game_Control
@@ -38,92 +36,6 @@ public:
 		}
 		return false;
 	}
-
-	static Game_Data::Move_Direct Input(void)
-	{
-		while (_kbhit() != 0)//存在一个输入
-		{
-			switch (_getwch())
-			{
-			case 'w':
-			case 'W':
-				{
-					return Game_Data::Move_Direct::Up;
-				}
-				break;
-			case 'a':
-			case 'A':
-				{
-					return Game_Data::Move_Direct::Left;
-				}
-				break;
-			case 's':
-			case 'S':
-				{
-					return Game_Data::Move_Direct::Down;
-				}
-				break;
-			case 'd':
-			case 'D':
-				{
-					return Game_Data::Move_Direct::Right;
-				}
-				break;
-			case 'p'://暂停
-			case 'P':
-				{
-					int iGet;
-					do
-					{
-						iGet = _getwch();
-					} while (iGet != 'p' && iGet != 'P');
-					Wait(50);//给50ms反应时间
-				}
-				continue;
-			default:
-				continue;
-			}
-		}
-
-		return Game_Data::Move_Direct::No_Move;
-	}
-
-	static bool SwitchInput(const wchar_t *cWaitInInputTrue, long lTrueConut, const wchar_t *cWaitInInputFalse, long lFalseConut)
-	{
-		wchar_t wch;
-		while (true)
-		{
-			wch = _getwch();
-			for (long i = 0; i < lTrueConut; ++i)
-			{
-				if (wch == cWaitInInputTrue[i])
-				{
-					return true;
-				}
-			}
-			for (long i = 0; i < lFalseConut; ++i)
-			{
-				if (wch == cWaitInInputFalse[i])
-				{
-					return false;
-				}
-			}
-		}
-	}
-
-	static void GetAnyKey(void)
-	{
-		(void)_getwch();
-	}
-
-	static void SetIOMode(const Game_Data &csGameData)
-	{
-		//设置缓冲区为全缓冲，大小为地图大小
-		setvbuf(stdout, NULL, _IOFBF, (csGameData.GetMapHigh() + 2) * (csGameData.GetMapWidth() + 2) + 1);
-		(void)_setmode(_fileno(stdout), _O_U16TEXT);//设置输出字符集
-		(void)_setmode(_fileno(stdin), _O_U16TEXT);//设置输入字符集
-	}
-
 
 	enum class CgDir_Status :long
 	{

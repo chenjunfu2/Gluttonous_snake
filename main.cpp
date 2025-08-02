@@ -1,4 +1,5 @@
-﻿#include "Game_Play.hpp"
+﻿#include "Game_Init.hpp"
+#include "Game_Play.hpp"
 #include <time.h>
 
 //地图默认大小
@@ -49,6 +50,9 @@ int wmain(int argc, wchar_t *argv[])
 	每次都是用1作为随机数种子，食物位置每局固定
 	每吃完一个食物生成一个
 	*/
+
+	//全局初始化
+	Game_Init::Global_Init();
 
 	enum :long
 	{
